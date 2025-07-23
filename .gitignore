@@ -1,5 +1,14 @@
+__pycache__/
+*.py[cod]
 .venv/
-backups/
-outputs/
-reports/
 *.db
+backups/
+reports/
+.coverage
+__pycache__/
+*.py[cod]
+.venv/
+*.db
+backups/
+reports/
+.coverage
