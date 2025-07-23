@@ -1,0 +1,39 @@
+# Chaves de API e Autenticação
+api_keys:
+  google_gemini: "AIzaSyC4kKQbI49uvDnS7edW7cZURQAAO7VhnSw"
+  openai: "SUA_CHAVE_OPENAI_AQUI"
+  notion: "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"
+
+# Configuração da Integração do Notion
+notion_db:
+  projects_db_id: "238ec5c5d2eb8093819eff542ae16463"
+  tasks_db_id: "238ec5c5d2eb801f9958e323667687d0"
+
+# Definição da Capacidade da Equipe (horas por semana por papel)
+team_capacity:
+  - role: "Product Owner"
+    hours_per_week: 10
+  - role: "Desenvolvedor Full-Stack"
+    hours_per_week: 40
+  - role: "Designer UX/UI"
+    hours_per_week: 20
+  - role: "Gerente de Projeto"
+    hours_per_week: 40
+
+# ... (o resto do arquivo continua igual)
+# Configurações de Notificação
+notifications:
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_user: "seu-email@gmail.com"
+    smtp_password: "sua-senha-de-app"
+
+# Configurações Gerais
+database_url: "sqlite:///projects.db"
+backup:
+  path: "backups/"
+  daily_retention: 7
+  weekly_retention: 4
+  monthly_retention: 6

@@ -1,0 +1,30 @@
+# Regras de orquestração de eventos para o Agent Router
+event_workflows:
+  NEW_PROJECT_CREATED:
+    - analyze_market
+    - analyze_compliance
+    - plan_gtm
+    - analyze_risks
+    - design_org
+
+# Regras de Dependência entre Agentes/Módulos (para referência futura)
+dependencies:
+  Contract_Fabric:
+    - Doc-Checklist_Builder
+    - Compliance_Guardian
+  Go-to-Market_Copilot:
+    - FinModeler/Viability_Engine
+
+# Regras de Priorização de Tarefas
+priorities:
+  - condition: "risk_score >= 8"
+    level: "critical"
+  - condition: "due_date_days <= 3"
+    level: "high"
+  - condition: "status == 'unlocked'"
+    level: "medium"
+
+# Regras de Alocação e Capacidade
+capacity_rules:
+  shared_resource_buffer_days: 2
+  parallel_task_tolerance_percent: 80

@@ -1,0 +1,5 @@
+.venv/
+backups/
+outputs/
+reports/
+*.db

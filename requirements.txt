@@ -1,0 +1,29 @@
+# Core & CLI
+typer[all]
+rich
+
+# Web UI
+streamlit
+
+# Agendamento de Tarefas
+apscheduler
+
+# APIs de IA Generativa
+google-generativeai
+openai
+
+# Integração com Notion
+notion-client
+
+# Banco de Dados
+sqlalchemy
+
+# Manipulação de Configuração
+pyyaml
+
+# Ferramentas de Teste
+pytest
+pytest-cov
+
+# Visualização de Dados
+plotly
