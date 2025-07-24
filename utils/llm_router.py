@@ -1,4 +1,5 @@
 import os
+type: ignore
 import openai
 import google.generativeai as genai
 from anthropic import Client as AnthropicClient

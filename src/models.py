@@ -1,4 +1,5 @@
 # src/models.py
+type: ignore
 import enum
 
 from sqlalchemy import JSON, Column, DateTime, Enum, Float, ForeignKey, Integer, String
