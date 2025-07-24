@@ -13,6 +13,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from agents.agent_router import AgentRouter
+from agents.notion_writer import NotionWriter
+from agents.schedule_copilot import ScheduleCopilot
 from agents.decision_supporter import DecisionSupporter
 from agents.stakeholder_graph_bot import StakeholderGraphBot
 from agents.brand_kit_bot import BrandKitBot
@@ -77,46 +79,79 @@ def get_db_session(db_url: str):
 
 
 # ---------------------------------------------------------------------
-# Comando principal
+# Comando principal: NEW_PROJECT_CREATED (fluxo manual)
 # ---------------------------------------------------------------------
-@app.command(help="✨ Cria um novo projeto e dispara workflow NEW_PROJECT_CREATED.")
+@app.command(help="✨ Cria um novo projeto e seu cronograma de tarefas no DB e Notion.")
 def new_project(
-    name: str = typer.Argument(..., help="Nome do projeto"),
-    project_type: str = typer.Option("default", help="Tipo de projeto"),
-    country: str = typer.Option("Brasil", help="País"),
-    dry_run: bool = typer.Option(False, help="Simulação (dry-run)"),
-):
+    name: str = typer.Argument(..., help="O nome completo do novo projeto."),
+    project_type: str = typer.Option("default", help="O tipo de projeto."),
+    country: str = typer.Option("Brasil", help="O país."),
+) -> None:
+    console.print(f"✨ Iniciando criação do projeto: [bold green]{name}[/bold green]")
     project_root = Path(__file__).resolve().parents[1]
-    load_env_vars(project_root)
     cfg = load_config(project_root)
-    model_mapping = load_model_mapping(cfg, project_root)
-    rules = load_rules(cfg, project_root)
+    db_session = get_db_session(cfg["database_url"])
 
-    router = AgentRouter(cfg, model_mapping, rules)
-    project_data = {
-        "name": name,
-        "project_type": project_type,
-        "country": country,
-        "team_capacity": cfg.get("team_capacity", []),
-    }
-    router.run_workflow("NEW_PROJECT_CREATED", project_data, dry_run=dry_run)
-    typer.echo("Workflow finalizado" + (" (dry-run)" if dry_run else ""))
+    try:
+        writer = NotionWriter(
+            api_key=cfg["notion_token"],
+            projects_db_id=cfg["notion_db"]["projects_db_id"],
+            tasks_db_id=cfg["notion_db"]["tasks_db_id"],
+        )
+        scheduler = ScheduleCopilot()
+        slug = re.sub(r"[^\w-]", "", name.lower().replace(" ", "-"))
+        project_data = {"slug": slug, "name": name, "type": project_type, "country": country}
+        notion_page_id = writer.create_project_page(project_data)
+
+        db_project = models.Project(
+            name=name,
+            slug=slug,
+            project_type=project_type,
+            country=country,
+            status=models.ProjectStatus.PLANNING,
+            notion_page_id=notion_page_id,
+        )
+        db_session.add(db_project)
+        db_session.flush()
+
+        tasks = scheduler.generate_schedule(project_type)
+        for task_item in tasks:
+            writer.create_task_page(task_item, project_relation_id=notion_page_id)
+            db_task = models.Task(
+                project_id=db_project.id,
+                template=task_item["name"],
+                dor=task_item.get("dor", ""),
+                dod=task_item.get("dod", ""),
+                estimate=task_item.get("estimate", 0),
+            )
+            db_session.add(db_task)
+
+        db_session.commit()
+        console.print(
+            f"✅ Projeto '{name}' e tarefas sincronizados com sucesso! "
+            f"Slug: [bold cyan]{slug}[/bold cyan]"
+        )
+    except Exception as e:
+        console.print(f"[bold red]Falha na criação do projeto:[/] {e}")
+        db_session.rollback()
+    finally:
+        db_session.close()
 
 
 # ---------------------------------------------------------------------
-# Análise de decisão
+# Comando avançado: análise de decisão
 # ---------------------------------------------------------------------
 @app.command(help="🤔 Analisa prós, contras e riscos de uma decisão estratégica.")
 def support_decision(
-    project_slug: str = typer.Argument(..., help="Slug do projeto"),
-    decision: str    = typer.Argument(..., help="Decisão a ser analisada"),
-):
+    project_slug: str = typer.Argument(..., help="Slug do projeto."),
+    decision: str    = typer.Argument(..., help="Decisão a ser analisada."),
+) -> None:
     cfg = load_config(Path(__file__).resolve().parents[1])
-    db = get_db_session(cfg["database_url"])
-    project = db.query(models.Project).filter_by(slug=project_slug).first()
+    db_session = get_db_session(cfg["database_url"])
+    project = db_session.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
-        console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
-        db.close()
+        console.print(f"[bold red]Erro:[/] Projeto '{project_slug}' não encontrado.")
+        db_session.close()
         return
 
     try:
@@ -126,20 +161,20 @@ def support_decision(
     except Exception as e:
         console.print(f"[bold red]Erro na análise: {e}[/bold red]")
     finally:
-        db.close()
+        db_session.close()
 
 
 # ---------------------------------------------------------------------
-# Mapeamento de stakeholders
+# Comando avançado: mapeamento de stakeholders
 # ---------------------------------------------------------------------
-@app.command(help="🗺️ Mapeia stakeholders de um projeto.")
-def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do projeto")):
+@app.command(help="🗺️  Mapeia stakeholders de um projeto.")
+def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do projeto")) -> None:
     cfg = load_config(Path(__file__).resolve().parents[1])
-    db = get_db_session(cfg["database_url"])
-    project = db.query(models.Project).filter_by(slug=project_slug).first()
+    db_session = get_db_session(cfg["database_url"])
+    project = db_session.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
-        console.print(f"[bold red]Erro:[/bold_red] Projeto '{project_slug}' não encontrado.")
-        db.close()
+        console.print(f"[bold red]Erro:[/] Projeto '{project_slug}' não encontrado.")
+        db_session.close()
         return
 
     try:
@@ -154,20 +189,20 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
             table.add_row(sh["stakeholder"], sh["influence"], sh["interest"], sh["engagement_strategy"])
         console.print(table)
     finally:
-        db.close()
+        db_session.close()
 
 
 # ---------------------------------------------------------------------
-# Kit de marca
+# Comando avançado: kit de marca
 # ---------------------------------------------------------------------
 @app.command(help="🎨 Gera kit de marca para um projeto.")
-def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto")):
+def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto")) -> None:
     cfg = load_config(Path(__file__).resolve().parents[1])
-    db = get_db_session(cfg["database_url"])
-    project = db.query(models.Project).filter_by(slug=project_slug).first()
+    db_session = get_db_session(cfg["database_url"])
+    project = db_session.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
-        console.print(f"[bold red]Erro:[/bold_red] Projeto '{project_slug}' não encontrado.")
-        db.close()
+        console.print(f"[bold red]Erro:[/] Projeto '{project_slug}' não encontrado.")
+        db_session.close()
         return
 
     try:
@@ -186,23 +221,23 @@ def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto
         )
         console.print(panel)
     finally:
-        db.close()
+        db_session.close()
 
 
 # ---------------------------------------------------------------------
-# Dashboard
+# Comando: dashboard Streamlit
 # ---------------------------------------------------------------------
 @app.command(help="📊 Abre dashboard Streamlit.")
-def dashboard():
+def dashboard() -> None:
     console.print("📊 Abrindo dashboard...")
     subprocess.run(["streamlit", "run", "src/dashboard.py"], check=False)
 
 
 # ---------------------------------------------------------------------
-# Inicializa BD
+# Comando: inicializa banco de dados
 # ---------------------------------------------------------------------
-@app.command(help="⚙️ Inicializa banco de dados (SQLite).")
-def init_db():
+@app.command(help="⚙️  Inicializa banco de dados (SQLite).")
+def init_db() -> None:
     console.print("⚙️ Inicializando banco de dados...")
     cfg = load_config(Path(__file__).resolve().parents[1])
     engine = create_engine(cfg["database_url"])
@@ -210,5 +245,6 @@ def init_db():
     console.print("✅ Banco inicializado com sucesso!")
 
 
+# Entry-point
 if __name__ == "__main__":
     app()
