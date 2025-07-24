@@ -1,27 +1,32 @@
 # agents/fin_modeler.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class FinModeler:
     """
     Usa IA para criar modelos e análises de viabilidade financeira.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [FinModeler] Inicializado.")
 
     def analyze_viability(self, project: models.Project, market_analysis: dict) -> str:
         """
         Gera uma análise de viabilidade financeira simplificada.
         """
-        console.print(f"💰 [FinModeler] Analisando viabilidade financeira para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"💰 [FinModeler] Analisando viabilidade financeira para: [bold green]{project.name}[/bold green]..."
+        )
 
         # Usamos a análise de mercado (SOM) que já temos para dar mais contexto à IA
-        som_context = market_analysis.get('som', {}).get('value', 'não estimado')
+        som_context = market_analysis.get("som", {}).get("value", "não estimado")
 
         prompt = f"""
             Aja como um Analista Financeiro (CFA).
@@ -41,7 +46,9 @@ class FinModeler:
             5.  **Conclusão do Analista:** Dê um parecer breve sobre a viabilidade do projeto com base nos números.
         """
 
-        with console.status("[bold yellow]Aguardando IA calcular a viabilidade...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA calcular a viabilidade...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("💰 [FinModeler] Análise de viabilidade concluída!")

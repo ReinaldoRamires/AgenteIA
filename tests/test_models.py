@@ -2,6 +2,7 @@
 
 from src.models import Project, ProjectStatus
 
+
 def test_create_project_instance():
     """
     Testa a criação de uma instância do modelo Project em memória.
@@ -11,7 +12,7 @@ def test_create_project_instance():
         slug="projeto-teste-unitario",
         project_type="Teste",
         country="Brasil",
-        status=ProjectStatus.PLANNING
+        status=ProjectStatus.PLANNING,
     )
 
     assert project.name == "Projeto Teste Unitário"

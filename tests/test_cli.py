@@ -1,14 +1,19 @@
 # tests/test_cli.py
 
+from unittest.mock import MagicMock, patch
+
 from typer.testing import CliRunner
-from unittest.mock import patch, MagicMock
+
 from src.main import app
 
 runner = CliRunner()
 
-@patch('src.main.NotionWriter')
-@patch('src.main.get_db_session')
-def test_new_project_command_success(mock_get_db_session, mock_notion_writer_class, test_db_session):
+
+@patch("src.main.NotionWriter")
+@patch("src.main.get_db_session")
+def test_new_project_command_success(
+    mock_get_db_session, mock_notion_writer_class, test_db_session
+):
     """
     Testa o comando new-project em total isolamento, usando um DB em memória.
     """
@@ -21,11 +26,15 @@ def test_new_project_command_success(mock_get_db_session, mock_notion_writer_cla
     mock_get_db_session.return_value = test_db_session
 
     # Roda o comando CLI
-    result = runner.invoke(app, [
-        "new-project",
-        "Projeto Teste Isolado",
-        "--project-type", "Software",
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "new-project",
+            "Projeto Teste Isolado",
+            "--project-type",
+            "Software",
+        ],
+    )
 
     # Verifica os resultados
     assert result.exit_code == 0

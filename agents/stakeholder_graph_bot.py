@@ -1,25 +1,31 @@
 # agents/stakeholder_graph_bot.py
+import json
+
 import google.generativeai as genai
 from rich.console import Console
-import json
+
 from src import models
 
 console = Console()
+
 
 class StakeholderGraphBot:
     """
     Usa IA para mapear os stakeholders de um projeto e sugerir estratégias de engajamento.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Stakeholder Graph Bot] Inicializado.")
 
     def map_stakeholders(self, project: models.Project) -> list[dict]:
         """
         Gera uma lista de stakeholders com análise de influência e interesse.
         """
-        console.print(f"🗺️  [Stakeholder Graph Bot] Mapeando stakeholders para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"🗺️  [Stakeholder Graph Bot] Mapeando stakeholders para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um especialista em Gerenciamento de Partes Interessadas (Stakeholder Management).
@@ -46,13 +52,19 @@ class StakeholderGraphBot:
         """
 
         try:
-            with console.status("[bold yellow]Aguardando IA mapear os stakeholders...[/bold yellow]"):
+            with console.status(
+                "[bold yellow]Aguardando IA mapear os stakeholders...[/bold yellow]"
+            ):
                 response = self.model.generate_content(prompt)
 
-            cleaned_response = response.text.strip().replace("```json", "").replace("```", "")
+            cleaned_response = (
+                response.text.strip().replace("```json", "").replace("```", "")
+            )
             stakeholder_map = json.loads(cleaned_response)
 
-            console.print("🗺️  [Stakeholder Graph Bot] Mapeamento de stakeholders concluído!")
+            console.print(
+                "🗺️  [Stakeholder Graph Bot] Mapeamento de stakeholders concluído!"
+            )
             return stakeholder_map
         except Exception as e:
             console.print(f"[bold red]ERRO ao mapear stakeholders:[/bold red] {e}")

@@ -1,17 +1,20 @@
 # agents/decision_supporter.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class DecisionSupporter:
     """
     Usa IA para analisar cenários de "what-if" e trade-offs para apoiar a tomada de decisão.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Decision Supporter] Inicializado.")
 
     def analyze_trade_offs(self, project: models.Project, decision: str) -> str:
@@ -32,7 +35,9 @@ class DecisionSupporter:
             4.  **Recomendação Final:** Dê uma recomendação concisa (ex: "Recomendado com ressalvas", "Não recomendado nesta fase", "Recomendado").
         """
 
-        with console.status("[bold yellow]Aguardando IA analisar os trade-offs...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA analisar os trade-offs...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("🤔 [Decision Supporter] Análise concluída!")

@@ -11,14 +11,49 @@ class ScheduleCopilot:
 
         if project_type == "Software":
             return [
-                {"name": "Fase 1: Discovery e Planejamento", "dor": "Briefing do projeto aprovado.", "dod": "Escopo e WBS definidos e validados.", "estimate": 8},
-                {"name": "Fase 2: Design (UX/UI)", "dor": "WBS definida.", "dod": "Protótipos de alta fidelidade aprovados.", "estimate": 12},
-                {"name": "Fase 3: Desenvolvimento", "dor": "Protótipos aprovados.", "dod": "Funcionalidades core implementadas e testadas.", "estimate": 40},
-                {"name": "Fase 4: Lançamento", "dor": "Build de release aprovado.", "dod": "Produto em produção e monitorado.", "estimate": 4},
+                {
+                    "name": "Fase 1: Discovery e Planejamento",
+                    "dor": "Briefing do projeto aprovado.",
+                    "dod": "Escopo e WBS definidos e validados.",
+                    "estimate": 8,
+                },
+                {
+                    "name": "Fase 2: Design (UX/UI)",
+                    "dor": "WBS definida.",
+                    "dod": "Protótipos de alta fidelidade aprovados.",
+                    "estimate": 12,
+                },
+                {
+                    "name": "Fase 3: Desenvolvimento",
+                    "dor": "Protótipos aprovados.",
+                    "dod": "Funcionalidades core implementadas e testadas.",
+                    "estimate": 40,
+                },
+                {
+                    "name": "Fase 4: Lançamento",
+                    "dor": "Build de release aprovado.",
+                    "dod": "Produto em produção e monitorado.",
+                    "estimate": 4,
+                },
             ]
-        else: # Padrão
+        else:  # Padrão
             return [
-                {"name": "Análise de Requisitos", "dor": "Ideia inicial apresentada.", "dod": "Documento de requisitos finalizado.", "estimate": 4},
-                {"name": "Execução da Tarefa Principal", "dor": "Requisitos aprovados.", "dod": "Entrega principal concluída.", "estimate": 16},
-                {"name": "Revisão e Validação", "dor": "Entrega principal concluída.", "dod": "Entrega validada pelo stakeholder.", "estimate": 2},
+                {
+                    "name": "Análise de Requisitos",
+                    "dor": "Ideia inicial apresentada.",
+                    "dod": "Documento de requisitos finalizado.",
+                    "estimate": 4,
+                },
+                {
+                    "name": "Execução da Tarefa Principal",
+                    "dor": "Requisitos aprovados.",
+                    "dod": "Entrega principal concluída.",
+                    "estimate": 16,
+                },
+                {
+                    "name": "Revisão e Validação",
+                    "dor": "Entrega principal concluída.",
+                    "dod": "Entrega validada pelo stakeholder.",
+                    "estimate": 2,
+                },
             ]

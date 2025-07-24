@@ -1,24 +1,29 @@
 # agents/it_bootstrapper.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class ITBootstrapper:
     """
     Usa IA para gerar um checklist de infraestrutura de TI para um novo projeto.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [IT Bootstrapper] Inicializado.")
 
     def generate_checklist(self, project: models.Project) -> str:
         """
         Gera um checklist de TI com base no tipo de projeto.
         """
-        console.print(f"💻 [IT Bootstrapper] Gerando checklist de TI para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"💻 [IT Bootstrapper] Gerando checklist de TI para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um Arquiteto de Soluções de TI experiente.
@@ -33,7 +38,9 @@ class ITBootstrapper:
             5.  **Estratégia de Backup:** Descreva uma estratégia de backup simples e inicial para os dados críticos.
         """
 
-        with console.status("[bold yellow]Aguardando IA montar o checklist de TI...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA montar o checklist de TI...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("💻 [IT Bootstrapper] Checklist de TI gerado com sucesso!")

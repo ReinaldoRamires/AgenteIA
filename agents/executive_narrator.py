@@ -7,23 +7,29 @@ from src import models
 
 console = Console()
 
+
 class ExecutiveNarrator:
     """
     Usa IA para gerar relatórios e narrativas executivas sobre projetos.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Executive Narrator] Inicializado e pronto para narrar.")
 
     def generate_report(self, project: models.Project, tasks: list[models.Task]) -> str:
         """
         Gera um relatório executivo em Markdown para um projeto e suas tarefas.
         """
-        console.print(f"📖 [Executive Narrator] Gerando relatório para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"📖 [Executive Narrator] Gerando relatório para: [bold green]{project.name}[/bold green]..."
+        )
 
         # 1. Construir o contexto com os dados que temos
-        task_list_str = "\n".join([f"- {task.template} (Status: {task.percent_done}%)" for task in tasks])
+        task_list_str = "\n".join(
+            [f"- {task.template} (Status: {task.percent_done}%)" for task in tasks]
+        )
         context = f"""
         **Dados do Projeto:**
         - Nome: {project.name}
@@ -55,7 +61,9 @@ class ExecutiveNarrator:
         """
 
         # 3. Chamar a IA e retornar o resultado
-        with console.status("[bold yellow]Aguardando IA escrever o relatório...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA escrever o relatório...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("📖 [Executive Narrator] Relatório gerado com sucesso!")
