@@ -1,6 +1,7 @@
 # Core & CLI
 typer[all]
 rich
+python-dotenv
 
 # Web UI
 streamlit
