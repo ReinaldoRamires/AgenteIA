@@ -150,7 +150,7 @@ else:
                 st.info("Nenhuma tarefa encontrada para este projeto.")
 
             # Exibe análise de mercado do projeto selecionado (se houver)
-            st.write(f"#### Análise de Mercado (Cache)")
+            st.write("#### Análise de Mercado (Cache)")
 
             # Procura no cache uma análise para o tipo e país do projeto
             project_market_analysis = market_cache[

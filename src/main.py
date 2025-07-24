@@ -217,7 +217,7 @@ def init_db():
     db_url = config.get("database_url")
     engine = create_engine(db_url)
     models.create_db_and_tables(engine)
-    console.print(f"✅ Banco de dados inicializado com sucesso!")
+    console.print("✅ Banco de dados inicializado com sucesso!")
 
 
 if __name__ == "__main__":
