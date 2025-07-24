@@ -90,7 +90,7 @@ def new_project(
             db_session.add(db_task)
         db_session.commit()
         console.print(
-            f"✅ Projeto '{name}' criado com sucesso! Slug: [bold cyan]{slug}[/bold cyan]"
+            f"✅ Projeto '{name}' e tarefas sincronizados com sucesso! Slug: [bold cyan]{slug}[/bold cyan]"
         )
     except Exception as e:
         console.print(f"[bold red]Falha na criação do projeto: {e}[/bold red]")
