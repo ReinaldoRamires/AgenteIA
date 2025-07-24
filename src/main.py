@@ -1,5 +1,4 @@
 import os
-import re
 import subprocess
 from pathlib import Path
 from typing import Any, Dict
@@ -17,8 +16,6 @@ from agents.agent_router import AgentRouter
 from agents.decision_supporter import DecisionSupporter
 from agents.stakeholder_graph_bot import StakeholderGraphBot
 from agents.brand_kit_bot import BrandKitBot
-from agents.notion_writer import NotionWriter
-from agents.schedule_copilot import ScheduleCopilot
 
 from src import models  # noqa: F401 — importa src.models corretamente
 
@@ -28,7 +25,6 @@ from src import models  # noqa: F401 — importa src.models corretamente
 load_dotenv()
 console = Console()
 app = typer.Typer(help="🚀 PMO 360° – CLI")
-
 
 # ---------------------------------------------------------------------
 # Helpers para configuração e DB
@@ -108,7 +104,7 @@ def new_project(
 
 
 # ---------------------------------------------------------------------
-# Comando avançado: análise de decisão
+# Análise de decisão
 # ---------------------------------------------------------------------
 @app.command(help="🤔 Analisa prós, contras e riscos de uma decisão estratégica.")
 def support_decision(
@@ -134,15 +130,15 @@ def support_decision(
 
 
 # ---------------------------------------------------------------------
-# Comando avançado: mapeamento de stakeholders
+# Mapeamento de stakeholders
 # ---------------------------------------------------------------------
 @app.command(help="🗺️ Mapeia stakeholders de um projeto.")
 def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do projeto")):
     cfg = load_config(Path(__file__).resolve().parents[1])
-    db  = get_db_session(cfg["database_url"])
+    db = get_db_session(cfg["database_url"])
     project = db.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
-        console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
+        console.print(f"[bold red]Erro:[/bold_red] Projeto '{project_slug}' não encontrado.")
         db.close()
         return
 
@@ -162,15 +158,15 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
 
 
 # ---------------------------------------------------------------------
-# Comando avançado: kit de marca
+# Kit de marca
 # ---------------------------------------------------------------------
 @app.command(help="🎨 Gera kit de marca para um projeto.")
 def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto")):
     cfg = load_config(Path(__file__).resolve().parents[1])
-    db  = get_db_session(cfg["database_url"])
+    db = get_db_session(cfg["database_url"])
     project = db.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
-        console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
+        console.print(f"[bold red]Erro:[/bold_red] Projeto '{project_slug}' não encontrado.")
         db.close()
         return
 
@@ -184,8 +180,9 @@ def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto
         panel = Panel(
             f"[bold]Slogan:[/bold] {slogan}\n\n"
             f"[bold]Missão:[/bold] {mission}\n\n"
-            f"[bold]Paleta de Cores:[/bold]\n{colors}",
-            title=f"Kit de Marca: {project.name}", border_style="yellow",
+            f"[bold]Paleta de Cores:[/bold] {colors}",
+            title=f"Kit de Marca: {project.name}",
+            border_style="yellow",
         )
         console.print(panel)
     finally:
@@ -193,7 +190,7 @@ def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto
 
 
 # ---------------------------------------------------------------------
-# Dashboard Streamlit
+# Dashboard
 # ---------------------------------------------------------------------
 @app.command(help="📊 Abre dashboard Streamlit.")
 def dashboard():
@@ -207,7 +204,7 @@ def dashboard():
 @app.command(help="⚙️ Inicializa banco de dados (SQLite).")
 def init_db():
     console.print("⚙️ Inicializando banco de dados...")
-    cfg    = load_config(Path(__file__).resolve().parents[1])
+    cfg = load_config(Path(__file__).resolve().parents[1])
     engine = create_engine(cfg["database_url"])
     models.create_db_and_tables(engine)
     console.print("✅ Banco inicializado com sucesso!")
