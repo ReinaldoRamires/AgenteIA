@@ -1,8 +1,6 @@
 # agents/agent_router.py
 from rich.console import Console
 from rich.rule import Rule
-from .schedule_copilot import ScheduleCopilot
-from .notion_writer import NotionWriter
 
 console = Console()
 
@@ -24,8 +22,7 @@ class AgentRouter:
         """
         console.print(Rule(f" Evento: {event_type} "))
         if event_type in self.workflows:
-            steps = self.workflows[event_type]
-            for step in steps:
+            for step in self.workflows[event_type]:
                 agent_cls = self.agents.get(step)
                 if not agent_cls:
                     console.print(f"[red]Agente '{step}' não encontrado[/red]")
