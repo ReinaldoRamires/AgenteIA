@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI Pipeline
 
 on:
@@ -29,7 +28,7 @@ jobs:
 
       - name: Lint com ruff  
         run: |
-          ruff .
+          ruff check .
 
       - name: Type-check com mypy  
         run: |
@@ -38,4 +37,3 @@ jobs:
       - name: Executar testes  
         run: |
           pytest --maxfail=1 --disable-warnings -q
-
