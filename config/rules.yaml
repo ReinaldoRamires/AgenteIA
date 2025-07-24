@@ -1,4 +1,5 @@
-# Regras de orquestração de eventos para o Agent Router
+# config/rules.yaml
+
 event_workflows:
   NEW_PROJECT_CREATED:
     - analyze_market
@@ -6,8 +7,8 @@ event_workflows:
     - plan_gtm
     - analyze_risks
     - design_org
+    # - sync_notion   # se quiser sincronizar com Notion no fim
 
-# Regras de Dependência entre Agentes/Módulos (para referência futura)
 dependencies:
   Contract_Fabric:
     - Doc-Checklist_Builder
@@ -15,7 +16,6 @@ dependencies:
   Go-to-Market_Copilot:
     - FinModeler/Viability_Engine
 
-# Regras de Priorização de Tarefas
 priorities:
   - condition: "risk_score >= 8"
     level: "critical"
@@ -24,7 +24,6 @@ priorities:
   - condition: "status == 'unlocked'"
     level: "medium"
 
-# Regras de Alocação e Capacidade
 capacity_rules:
   shared_resource_buffer_days: 2
   parallel_task_tolerance_percent: 80

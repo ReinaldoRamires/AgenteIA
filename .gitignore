@@ -5,10 +5,5 @@ __pycache__/
 backups/
 reports/
 .coverage
-__pycache__/
-*.py[cod]
-.venv/
-*.db
-backups/
-reports/
-.coverage
+.env
+config/config.yaml.backup

@@ -1,42 +1,29 @@
-# agents/backup_job.py
-import os
-import zipfile
-from datetime import datetime
-
+import os, shutil, datetime
+from typing import Any, Dict
 from rich.console import Console
+from .base_agent import BaseAgent
 
 console = Console()
 
-
-class BackupJob:
-    """Realiza o backup de arquivos importantes do projeto."""
-
-    def __init__(self, db_path="projects.db", backup_dir="backups"):
-        self.db_path = db_path
-        self.backup_dir = backup_dir
+class BackupJob(BaseAgent):
+    def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):
+        super().__init__("backup_job", config, model_mapping)
+        # assume database_url = sqlite:///caminho
+        db = config.get("database_url", "projects.db").replace("sqlite:///", "")
+        self.db_path = db
+        self.backup_dir = config.get("backup", {}).get("path", "backups/")
         os.makedirs(self.backup_dir, exist_ok=True)
-        console.print("✅ [Backup Job] Inicializado.")
+        console.print("✅ [Backup Job] Inicializado corretamente.")
 
-    def run_backup(self):
-        """Cria um arquivo .zip com o banco de dados."""
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        backup_filename = os.path.join(self.backup_dir, f"backup_{timestamp}.zip")
+    def build_prompt(self, project_data: Dict[str, Any]) -> str:
+        return ""
 
-        console.print(
-            f"🗄️  [Backup Job] Iniciando backup em [bold cyan]{backup_filename}[/bold cyan]..."
-        )
-
-        try:
-            if not os.path.exists(self.db_path):
-                console.print(
-                    f"   -> [bold yellow]Aviso:[/bold yellow] Arquivo do banco de dados '{self.db_path}' não encontrado. Backup pulado."
-                )
-                return
-
-            with zipfile.ZipFile(backup_filename, "w") as zipf:
-                zipf.write(self.db_path, os.path.basename(self.db_path))
-
-            console.print("   -> Backup concluído com sucesso!")
-
-        except Exception as e:
-            console.print(f"[bold red]ERRO ao criar backup:[/bold red] {e}")
+    def run(self, project_data: Dict[str, Any], dry_run: bool = False):
+        if dry_run:
+            console.print(f"[DryRun] backup_job → copiaria '{self.db_path}' para '{self.backup_dir}'")
+            return {}
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest = os.path.join(self.backup_dir, f"backup_{timestamp}.db")
+        shutil.copy(self.db_path, dest)
+        console.print(f"[backup_job] Backup criado em {dest}")
+        return {"backup_path": dest}

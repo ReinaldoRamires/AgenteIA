@@ -27,3 +27,4 @@ pytest-cov
 
 # Visualização de Dados
 plotly
+genai>=0.4.2

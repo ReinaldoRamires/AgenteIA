@@ -1,15 +1,26 @@
-# Chaves de API e Autenticação
-api_keys:
-  google_gemini: "AIzaSyC4kKQbI49uvDnS7edW7cZURQAAO7VhnSw"
-  openai: "SUA_CHAVE_OPENAI_AQUI"
-  notion: "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"
+# config/config.yaml
 
-# Configuração da Integração do Notion
+# As chaves ficam vazias aqui. Vamos carregá-las por ambiente (.env)
+# config/config.yaml
+
+openai_key: null        # será lido do .env
+gemini_key: null
+anthropic_key: null
+mistral_key: null
+cohere_key: null
+
+# Ordem global de fallback (você pode alterar)
+fallback_chain:
+  - openai
+  - gemini
+  - anthropic
+  - mistral
+  - cohere
+
 notion_db:
   projects_db_id: "238ec5c5d2eb8093819eff542ae16463"
-  tasks_db_id: "238ec5c5d2eb801f9958e323667687d0"
+  tasks_db_id:    "238ec5c5d2eb801f9958e323667687d0"
 
-# Definição da Capacidade da Equipe (horas por semana por papel)
 team_capacity:
   - role: "Product Owner"
     hours_per_week: 10
@@ -20,8 +31,6 @@ team_capacity:
   - role: "Gerente de Projeto"
     hours_per_week: 40
 
-# ... (o resto do arquivo continua igual)
-# Configurações de Notificação
 notifications:
   email:
     enabled: false
@@ -30,10 +39,12 @@ notifications:
     smtp_user: "seu-email@gmail.com"
     smtp_password: "sua-senha-de-app"
 
-# Configurações Gerais
 database_url: "sqlite:///projects.db"
 backup:
   path: "backups/"
   daily_retention: 7
   weekly_retention: 4
   monthly_retention: 6
+
+rules_file: config/rules.yaml
+model_mapping_file: config/model_mapping.yaml

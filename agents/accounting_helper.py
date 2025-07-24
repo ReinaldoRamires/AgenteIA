@@ -1,44 +1,13 @@
-# agents/accounting_helper.py
-import google.generativeai as genai
+from typing import Any, Dict
 from rich.console import Console
-
-from src import models
+from .base_agent import BaseAgent
 
 console = Console()
 
-
-class AccountingHelper:
-    """
-    Usa IA para fornecer recomendações contábeis e fiscais iniciais.
-    """
-
-    def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
+class AccountingHelper(BaseAgent):
+    def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):
+        super().__init__("accounting_helper", config, model_mapping)
         console.print("✅ [Accounting Helper] Inicializado.")
 
-    def suggest_structure(self, project: models.Project) -> str:
-        """
-        Sugere um regime tributário e um plano de contas simplificado.
-        """
-        console.print(
-            f"🧾 [Accounting Helper] Sugerindo estrutura contábil para: [bold green]{project.name}[/bold green]..."
-        )
-
-        prompt = f"""
-            Aja como um Contador Consultor especializado em startups.
-            Para um novo projeto no Brasil chamado "{project.name}", do tipo "{project.project_type}",
-            forneça recomendações iniciais em formato Markdown sobre:
-
-            1.  **Regime Tributário Sugerido:** Sugira o regime mais provável para uma empresa nascente (Simples Nacional, Lucro Presumido) e justifique brevemente.
-            2.  **Plano de Contas Simplificado:** Liste as 5 principais contas de Despesa e 3 de Receita que a empresa deveria monitorar desde o início.
-            3.  **Principal Obrigação Acessória:** Cite uma obrigação fiscal/contábil mensal importante para uma empresa de serviços no Brasil.
-        """
-
-        with console.status(
-            "[bold yellow]Aguardando IA preparar as recomendações contábeis...[/bold yellow]"
-        ):
-            response = self.model.generate_content(prompt)
-
-        console.print("🧾 [Accounting Helper] Recomendações geradas com sucesso!")
-        return response.text
+    def build_prompt(self, project_data: Dict[str, Any]) -> str:
+        return "AccountingHelper stub: sem uso de LLM."
