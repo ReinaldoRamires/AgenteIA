@@ -1,5 +1,5 @@
-# src/main.py
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Dict
@@ -17,14 +17,22 @@ from agents.agent_router import AgentRouter
 from agents.decision_supporter import DecisionSupporter
 from agents.stakeholder_graph_bot import StakeholderGraphBot
 from agents.brand_kit_bot import BrandKitBot
+from agents.notion_writer import NotionWriter
+from agents.schedule_copilot import ScheduleCopilot
 
-import models  # noqa: F401
+from src import models  # noqa: F401 — importa src.models corretamente
 
+# ---------------------------------------------------------------------
+# Bootstrap
+# ---------------------------------------------------------------------
 load_dotenv()
 console = Console()
 app = typer.Typer(help="🚀 PMO 360° – CLI")
 
 
+# ---------------------------------------------------------------------
+# Helpers para configuração e DB
+# ---------------------------------------------------------------------
 def load_env_vars(project_root: Path) -> None:
     env_file = project_root / ".env"
     if env_file.exists():
@@ -39,8 +47,8 @@ def load_config(project_root: Path) -> Dict[str, Any]:
         cfg = yaml.safe_load(f)
 
     # Override por ENV
-    cfg["openai_key"] = os.getenv("OPENAI_API_KEY", cfg.get("openai_key"))
-    cfg["gemini_key"] = os.getenv("GEMINI_API_KEY", cfg.get("gemini_key"))
+    cfg["openai_key"]   = os.getenv("OPENAI_API_KEY", cfg.get("openai_key"))
+    cfg["gemini_key"]   = os.getenv("GEMINI_API_KEY", cfg.get("gemini_key"))
     cfg["notion_token"] = os.getenv("NOTION_TOKEN", cfg.get("notion_token"))
 
     for key, label in [
@@ -72,6 +80,9 @@ def get_db_session(db_url: str):
     return Session()
 
 
+# ---------------------------------------------------------------------
+# Comando principal
+# ---------------------------------------------------------------------
 @app.command(help="✨ Cria um novo projeto e dispara workflow NEW_PROJECT_CREATED.")
 def new_project(
     name: str = typer.Argument(..., help="Nome do projeto"),
@@ -96,10 +107,13 @@ def new_project(
     typer.echo("Workflow finalizado" + (" (dry-run)" if dry_run else ""))
 
 
+# ---------------------------------------------------------------------
+# Comando avançado: análise de decisão
+# ---------------------------------------------------------------------
 @app.command(help="🤔 Analisa prós, contras e riscos de uma decisão estratégica.")
 def support_decision(
     project_slug: str = typer.Argument(..., help="Slug do projeto"),
-    decision: str = typer.Argument(..., help="Decisão a ser analisada"),
+    decision: str    = typer.Argument(..., help="Decisão a ser analisada"),
 ):
     cfg = load_config(Path(__file__).resolve().parents[1])
     db = get_db_session(cfg["database_url"])
@@ -110,7 +124,7 @@ def support_decision(
         return
 
     try:
-        supp = DecisionSupporter(api_key=cfg["gemini_key"])
+        supp     = DecisionSupporter(api_key=cfg["gemini_key"])
         analysis = supp.analyze_trade_offs(project, decision)
         console.print(f"\n--- Análise da Decisão: '{decision}' ---\n{analysis}\n" + "-"*50)
     except Exception as e:
@@ -119,10 +133,13 @@ def support_decision(
         db.close()
 
 
+# ---------------------------------------------------------------------
+# Comando avançado: mapeamento de stakeholders
+# ---------------------------------------------------------------------
 @app.command(help="🗺️ Mapeia stakeholders de um projeto.")
 def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do projeto")):
     cfg = load_config(Path(__file__).resolve().parents[1])
-    db = get_db_session(cfg["database_url"])
+    db  = get_db_session(cfg["database_url"])
     project = db.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
         console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
@@ -131,8 +148,8 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
 
     try:
         mapper = StakeholderGraphBot(api_key=cfg["gemini_key"])
-        sts = mapper.map_stakeholders(project)
-        table = Table(title=f"Stakeholders: {project.name}", show_header=True, header_style="bold green")
+        sts    = mapper.map_stakeholders(project)
+        table  = Table(title=f"Stakeholders: {project.name}", show_header=True, header_style="bold green")
         table.add_column("Stakeholder", style="dim", width=25)
         table.add_column("Influência")
         table.add_column("Interesse")
@@ -144,10 +161,13 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
         db.close()
 
 
+# ---------------------------------------------------------------------
+# Comando avançado: kit de marca
+# ---------------------------------------------------------------------
 @app.command(help="🎨 Gera kit de marca para um projeto.")
 def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto")):
     cfg = load_config(Path(__file__).resolve().parents[1])
-    db = get_db_session(cfg["database_url"])
+    db  = get_db_session(cfg["database_url"])
     project = db.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
         console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
@@ -155,37 +175,42 @@ def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto
         return
 
     try:
-        bt = BrandKitBot(api_key=cfg["gemini_key"])
+        bt  = BrandKitBot(api_key=cfg["gemini_key"])
         kit = bt.generate_kit(project)
-        slogan = kit.get("slogan", "N/A")
+        slogan  = kit.get("slogan", "N/A")
         mission = kit.get("mission_statement", "N/A")
         palette = kit.get("color_palette", [])
-        colors = "\n".join(f"[{c.split()[0]}]███[/] {c}" for c in palette)
+        colors  = "\n".join(f"[{c.split()[0]}]███[/] {c}" for c in palette)
         panel = Panel(
             f"[bold]Slogan:[/bold] {slogan}\n\n"
             f"[bold]Missão:[/bold] {mission}\n\n"
             f"[bold]Paleta de Cores:[/bold]\n{colors}",
-            title=f"Kit de Marca: {project.name}",
-            border_style="yellow",
+            title=f"Kit de Marca: {project.name}", border_style="yellow",
         )
         console.print(panel)
     finally:
         db.close()
 
 
+# ---------------------------------------------------------------------
+# Dashboard Streamlit
+# ---------------------------------------------------------------------
 @app.command(help="📊 Abre dashboard Streamlit.")
 def dashboard():
     console.print("📊 Abrindo dashboard...")
     subprocess.run(["streamlit", "run", "src/dashboard.py"], check=False)
 
 
-@app.command(help="⚙️ Inicializa o banco de dados (SQLite).")
+# ---------------------------------------------------------------------
+# Inicializa BD
+# ---------------------------------------------------------------------
+@app.command(help="⚙️ Inicializa banco de dados (SQLite).")
 def init_db():
     console.print("⚙️ Inicializando banco de dados...")
-    cfg = load_config(Path(__file__).resolve().parents[1])
+    cfg    = load_config(Path(__file__).resolve().parents[1])
     engine = create_engine(cfg["database_url"])
     models.create_db_and_tables(engine)
-    console.print("✅ Banco inicalizado com sucesso!")
+    console.print("✅ Banco inicializado com sucesso!")
 
 
 if __name__ == "__main__":
