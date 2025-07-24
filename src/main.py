@@ -1,3 +1,4 @@
+# src/main.py
 import os
 import re
 import subprocess
@@ -7,6 +8,7 @@ from typing import Any, Dict
 import yaml
 import typer
 from dotenv import load_dotenv
+# carrega .env uma vez
 load_dotenv()
 from rich.console import Console
 from rich.panel import Panel
@@ -110,7 +112,7 @@ def new_project(
 
 
 # ---------------------------------------------------------------------
-# Comandos avançados
+# Comando avançado: análise de decisão
 # ---------------------------------------------------------------------
 @app.command(help="🤔 Analisa prós, contras e riscos de uma decisão estratégica.")
 def support_decision(
@@ -121,11 +123,14 @@ def support_decision(
     load_env_vars(project_root)
     cfg = load_config(project_root)
     db = get_db_session(cfg["database_url"])
+
+    # Importa dentro do try para não quebrar caso o módulo não exista
     try:
         from agents.decision_supporter import DecisionSupporter
         import models
     except ModuleNotFoundError as e:
         console.print(f"[bold red]Erro: módulo não encontrado: {e}[/bold red]")
+        db.close()
         return
 
     project = db.query(models.Project).filter_by(slug=project_slug).first()
@@ -137,24 +142,32 @@ def support_decision(
     try:
         supporter = DecisionSupporter(api_key=cfg["gemini_key"])
         analysis = supporter.analyze_trade_offs(project, decision)
-        console.print(f"\n--- Análise da Decisão: '{decision}' ---\n{analysis}\n" + "-"*50)
+        console.print(
+            f"\n--- Análise da Decisão: '{decision}' ---\n"
+            f"{analysis}\n" + "-" * 50
+        )
     except Exception as e:
         console.print(f"[bold red]Falha na análise de decisão: {e}[/bold red]")
     finally:
         db.close()
 
 
+# ---------------------------------------------------------------------
+# Comando avançado: mapeamento de stakeholders
+# ---------------------------------------------------------------------
 @app.command(help="🗺️  Mapeia os stakeholders de um projeto.")
 def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do projeto")) -> None:
     project_root = Path(__file__).resolve().parents[1]
     load_env_vars(project_root)
     cfg = load_config(project_root)
     db = get_db_session(cfg["database_url"])
+
     try:
         from agents.stakeholder_graph_bot import StakeholderGraphBot
         import models
     except ModuleNotFoundError as e:
         console.print(f"[bold red]Erro: módulo não encontrado: {e}[/bold red]")
+        db.close()
         return
 
     project = db.query(models.Project).filter_by(slug=project_slug).first()
@@ -177,23 +190,30 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
             table.add_column("Interesse")
             table.add_column("Estratégia", width=50)
             for sh in stakeholders:
-                table.add_row(sh["stakeholder"], sh["influence"], sh["interest"], sh["engagement"])
+                table.add_row(
+                    sh["stakeholder"], sh["influence"], sh["interest"], sh["engagement"]
+                )
             console.print(table)
     finally:
         db.close()
 
 
+# ---------------------------------------------------------------------
+# Comando avançado: kit de marca
+# ---------------------------------------------------------------------
 @app.command(help="🎨 Gera um kit de identidade de marca para um projeto.")
 def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto")) -> None:
     project_root = Path(__file__).resolve().parents[1]
     load_env_vars(project_root)
     cfg = load_config(project_root)
     db = get_db_session(cfg["database_url"])
+
     try:
         from agents.brand_kit_bot import BrandKitBot
         import models
     except ModuleNotFoundError as e:
         console.print(f"[bold red]Erro: módulo não encontrado: {e}[/bold red]")
+        db.close()
         return
 
     project = db.query(models.Project).filter_by(slug=project_slug).first()
