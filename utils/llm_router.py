@@ -1,89 +1,85 @@
+# utils/llm_router.py
 import os
-# type: ignore
 import openai
 import google.generativeai as genai
-from anthropic import Client as AnthropicClient
-from huggingface_hub import InferenceClient
-import cohere
+
+# Import de provedores opcionais com fallback silencioso
+try:
+    from anthropic import Client as AnthropicClient
+except ImportError:
+    AnthropicClient = None
+
+try:
+    from huggingface_hub import InferenceClient
+except ImportError:
+    InferenceClient = None
+
+try:
+    import cohere
+except ImportError:
+    cohere = None
 
 class LLMRouter:
-    def __init__(self, config: dict):
-        # ordem de fallback (Gemini primeiro)
-        self.fallback = config.get(
-            "fallback_chain",
-            ["gemini", "openai", "anthropic", "mistral", "cohere"]
-        )
+    """
+    Faz fallback entre múltiplos provedores de LLM
+    conforme configurado em config['fallback_chain'].
+    """
 
-        # OpenAI
-        openai.api_key = config.get("openai_key")
-        self.openai = openai
+    def __init__(self, config: dict, model_mapping: dict):
+        self.config = config
+        self.chain = config.get("fallback_chain", [])
+        self.mapping = model_mapping
 
-        # Gemini (Google Generative AI)
-        gem_key = config.get("gemini_key")
-        if gem_key:
-            genai.configure(api_key=gem_key)
-            self.gemini = genai
-        else:
-            self.gemini = None
+        # Configura clientes somente se as libs estiverem disponíveis
+        self.clients = {}
+        if "openai" in self.chain:
+            openai.api_key = config.get("openai_key")
+            self.clients["openai"] = openai
+        if "gemini" in self.chain:
+            genai.configure(api_key=config.get("gemini_key"))
+            self.clients["gemini"] = genai
+        if "anthropic" in self.chain and AnthropicClient:
+            self.clients["anthropic"] = AnthropicClient(config.get("anthropic_key"))
+        if "mistral" in self.chain and InferenceClient:
+            self.clients["mistral"] = InferenceClient(token=config.get("mistral_key"))
+        if "cohere" in self.chain and cohere:
+            self.clients["cohere"] = cohere.Client(config.get("cohere_key"))
 
-        # Anthropic
-        ant_key = config.get("anthropic_key")
-        if ant_key:
-            self.anthropic = AnthropicClient(ant_key)
-        else:
-            self.anthropic = None
-
-        # Mistral / HF Inference
-        hf_token = config.get("mistral_key") or os.getenv("HF_API_TOKEN")
-        if hf_token:
-            self.hf = InferenceClient(token=hf_token)
-        else:
-            self.hf = None
-
-        # Cohere
-        co_key = config.get("cohere_key")
-        if co_key:
-            self.cohere = cohere.Client(co_key)
-        else:
-            self.cohere = None
-
-    def generate(self, prompt: str, model: str, agent_name: str) -> str:
-        errors = []
-
-        for provider in self.fallback:
+    def generate(self, model: str, prompt: str) -> str:
+        """
+        Tenta cada provedor na ordem do fallback_chain até obter resposta.
+        """
+        for provider in self.chain:
+            client = self.clients.get(provider)
+            if not client:
+                continue
             try:
-                if provider == "gemini" and self.gemini:
-                    # Atenção: dependendo da versão do google.generativeai, o método correto pode ser:
-                    #   genai.chat.completions.create(...) ou genai.generate_text(...)
-                    resp = self.gemini.generate_text(model=model, prompt=prompt)
-                    return resp.text
-
-                if provider == "openai" and self.openai:
-                    resp = self.openai.ChatCompletion.create(
+                if provider == "openai":
+                    resp = client.ChatCompletion.create(
                         model=model,
                         messages=[{"role": "user", "content": prompt}],
                     )
                     return resp.choices[0].message.content
-
-                if provider == "anthropic" and self.anthropic:
-                    resp = self.anthropic.completions.create(
+                if provider == "gemini":
+                    resp = client.chat.completions.create(
                         model=model,
-                        prompt=prompt,
+                        messages=[{"role": "user", "content": prompt}],
                     )
-                    return resp["completions"][0]["data"]["text"]
-
-                if provider == "mistral" and self.hf:
-                    out = self.hf.text_generation(model=model, inputs=prompt)
+                    return resp.choices[0].message.content
+                if provider == "anthropic":
+                    resp = client.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    return resp.choices[0].message.content
+                if provider == "mistral":
+                    out = client.text_generation(model=model, inputs=prompt)
+                    return out[0].generated_text
+                if provider == "cohere":
+                    out = client.generate(model=model, prompt=prompt)
                     return out.generations[0].text
+            except Exception:
+                # se falhar, continua para o próximo
+                continue
+        raise RuntimeError("Nenhum provedor retornou resposta.")
 
-                if provider == "cohere" and self.cohere:
-                    resp = self.cohere.generate(model=model, prompt=prompt)
-                    return resp.generations[0].text
-
-            except Exception as e:
-                errors.append(f"{provider}: {e}")
-
-        detail = "; ".join(errors)
-        raise RuntimeError(
-            f"Nenhum provedor LLM conseguiu gerar a resposta. Detalhes: {detail}"
-        )
