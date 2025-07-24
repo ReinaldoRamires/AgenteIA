@@ -1,29 +1,41 @@
-import os, shutil, datetime
+# agents/backup_job.py
+import os
+import shutil
+import datetime
+
 from typing import Any, Dict
 from rich.console import Console
-from .base_agent import BaseAgent
 
 console = Console()
 
-class BackupJob(BaseAgent):
-    def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):
-        super().__init__("backup_job", config, model_mapping)
-        # assume database_url = sqlite:///caminho
-        db = config.get("database_url", "projects.db").replace("sqlite:///", "")
-        self.db_path = db
-        self.backup_dir = config.get("backup", {}).get("path", "backups/")
-        os.makedirs(self.backup_dir, exist_ok=True)
-        console.print("✅ [Backup Job] Inicializado corretamente.")
 
-    def build_prompt(self, project_data: Dict[str, Any]) -> str:
-        return ""
+class BackupJob:
+    """
+    Realiza backup periódico dos dados em disco.
+    """
 
-    def run(self, project_data: Dict[str, Any], dry_run: bool = False):
+    def __init__(self, backup_path: str, retention_days: int):
+        self.backup_path = backup_path
+        self.retention_days = retention_days
+
+    def execute(self, data: Dict[str, Any], dry_run: bool = False):
+        now = datetime.datetime.utcnow()
+        backup_dir = os.path.join(self.backup_path, now.strftime("%Y%m%d_%H%M%S"))
         if dry_run:
-            console.print(f"[DryRun] backup_job → copiaria '{self.db_path}' para '{self.backup_dir}'")
-            return {}
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        dest = os.path.join(self.backup_dir, f"backup_{timestamp}.db")
-        shutil.copy(self.db_path, dest)
-        console.print(f"[backup_job] Backup criado em {dest}")
-        return {"backup_path": dest}
+            console.print(f"[DryRun] Criaria backup em {backup_dir}")
+        else:
+            shutil.copytree("data/", backup_dir)
+            console.print(f"Backup criado em {backup_dir}")
+            self._cleanup_old(now)
+
+    def _cleanup_old(self, now: datetime.datetime):
+        cutoff = now - datetime.timedelta(days=self.retention_days)
+        for folder in os.listdir(self.backup_path):
+            full_path = os.path.join(self.backup_path, folder)
+            try:
+                folder_time = datetime.datetime.strptime(folder, "%Y%m%d_%H%M%S")
+            except ValueError:
+                continue
+            if folder_time < cutoff:
+                shutil.rmtree(full_path)
+                console.print(f"Removido backup antigo: {folder}")

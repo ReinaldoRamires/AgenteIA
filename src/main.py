@@ -1,5 +1,5 @@
+# src/main.py
 import os
-import re
 import subprocess
 from pathlib import Path
 from typing import Any, Dict
@@ -14,30 +14,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from agents.agent_router import AgentRouter
-
-# Agentes avançados
 from agents.decision_supporter import DecisionSupporter
 from agents.stakeholder_graph_bot import StakeholderGraphBot
 from agents.brand_kit_bot import BrandKitBot
-from agents.notion_writer import NotionWriter
-from agents.schedule_copilot import ScheduleCopilot
 
 import models  # noqa: F401
 
-# ---------------------------------------------------------------------
-# Bootstrap
-# ---------------------------------------------------------------------
 load_dotenv()
 console = Console()
 app = typer.Typer(help="🚀 PMO 360° – CLI")
 
-# ---------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------
+
 def load_env_vars(project_root: Path) -> None:
-    env_path = project_root / ".env"
-    if env_path.exists():
-        load_dotenv(env_path)
+    env_file = project_root / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
     else:
         console.print("[yellow]Aviso: .env não encontrado na raiz do projeto.[/yellow]")
 
@@ -80,15 +71,13 @@ def get_db_session(db_url: str):
     Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     return Session()
 
-# ---------------------------------------------------------------------
-# Comando principal
-# ---------------------------------------------------------------------
+
 @app.command(help="✨ Cria um novo projeto e dispara workflow NEW_PROJECT_CREATED.")
 def new_project(
-    name: str = typer.Argument(..., help="Nome completo do projeto"),
+    name: str = typer.Argument(..., help="Nome do projeto"),
     project_type: str = typer.Option("default", help="Tipo de projeto"),
     country: str = typer.Option("Brasil", help="País"),
-    dry_run: bool = typer.Option(False, help="Simulação (não chama APIs)"),
+    dry_run: bool = typer.Option(False, help="Simulação (dry-run)"),
 ):
     project_root = Path(__file__).resolve().parents[1]
     load_env_vars(project_root)
@@ -97,18 +86,16 @@ def new_project(
     rules = load_rules(cfg, project_root)
 
     router = AgentRouter(cfg, model_mapping, rules)
-    data = {
+    project_data = {
         "name": name,
         "project_type": project_type,
         "country": country,
         "team_capacity": cfg.get("team_capacity", []),
     }
-    router.run_workflow("NEW_PROJECT_CREATED", data, dry_run=dry_run)
+    router.run_workflow("NEW_PROJECT_CREATED", project_data, dry_run=dry_run)
     typer.echo("Workflow finalizado" + (" (dry-run)" if dry_run else ""))
 
-# ---------------------------------------------------------------------
-# Análise de decisão
-# ---------------------------------------------------------------------
+
 @app.command(help="🤔 Analisa prós, contras e riscos de uma decisão estratégica.")
 def support_decision(
     project_slug: str = typer.Argument(..., help="Slug do projeto"),
@@ -121,6 +108,7 @@ def support_decision(
         console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
         db.close()
         return
+
     try:
         supp = DecisionSupporter(api_key=cfg["gemini_key"])
         analysis = supp.analyze_trade_offs(project, decision)
@@ -130,9 +118,7 @@ def support_decision(
     finally:
         db.close()
 
-# ---------------------------------------------------------------------
-# Mapeamento de stakeholders
-# ---------------------------------------------------------------------
+
 @app.command(help="🗺️ Mapeia stakeholders de um projeto.")
 def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do projeto")):
     cfg = load_config(Path(__file__).resolve().parents[1])
@@ -142,6 +128,7 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
         console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
         db.close()
         return
+
     try:
         mapper = StakeholderGraphBot(api_key=cfg["gemini_key"])
         sts = mapper.map_stakeholders(project)
@@ -156,9 +143,7 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
     finally:
         db.close()
 
-# ---------------------------------------------------------------------
-# Kit de marca
-# ---------------------------------------------------------------------
+
 @app.command(help="🎨 Gera kit de marca para um projeto.")
 def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto")):
     cfg = load_config(Path(__file__).resolve().parents[1])
@@ -168,6 +153,7 @@ def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto
         console.print(f"[bold red]Erro:[/bold red] Projeto '{project_slug}' não encontrado.")
         db.close()
         return
+
     try:
         bt = BrandKitBot(api_key=cfg["gemini_key"])
         kit = bt.generate_kit(project)
@@ -175,30 +161,32 @@ def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto
         mission = kit.get("mission_statement", "N/A")
         palette = kit.get("color_palette", [])
         colors = "\n".join(f"[{c.split()[0]}]███[/] {c}" for c in palette)
-        panel = Panel(f"[bold]Slogan:[/bold] {slogan}\n\n[bold]Missão:[/bold] {mission}\n\n[bold]Paleta:[/bold]\n{colors}",
-                      title=f"Kit de Marca: {project.name}", border_style="yellow")
+        panel = Panel(
+            f"[bold]Slogan:[/bold] {slogan}\n\n"
+            f"[bold]Missão:[/bold] {mission}\n\n"
+            f"[bold]Paleta de Cores:[/bold]\n{colors}",
+            title=f"Kit de Marca: {project.name}",
+            border_style="yellow",
+        )
         console.print(panel)
     finally:
         db.close()
 
-# ---------------------------------------------------------------------
-# Dashboard Streamlit
-# ---------------------------------------------------------------------
+
 @app.command(help="📊 Abre dashboard Streamlit.")
 def dashboard():
     console.print("📊 Abrindo dashboard...")
     subprocess.run(["streamlit", "run", "src/dashboard.py"], check=False)
 
-# ---------------------------------------------------------------------
-# Inicializa BD
-# ---------------------------------------------------------------------
-@app.command(help="⚙️ Cria DB e tabelas.")
+
+@app.command(help="⚙️ Inicializa o banco de dados (SQLite).")
 def init_db():
     console.print("⚙️ Inicializando banco de dados...")
     cfg = load_config(Path(__file__).resolve().parents[1])
     engine = create_engine(cfg["database_url"])
     models.create_db_and_tables(engine)
-    console.print("✅ Banco inicializado com sucesso!")
+    console.print("✅ Banco inicalizado com sucesso!")
+
 
 if __name__ == "__main__":
     app()
