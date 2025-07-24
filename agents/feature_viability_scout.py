@@ -1,24 +1,29 @@
 # agents/feature_viability_scout.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class FeatureViabilityScout:
     """
     Usa IA para fazer uma análise de viabilidade de novas funcionalidades.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Feature Viability Scout] Inicializado.")
 
     def scout(self, project: models.Project, feature_description: str) -> str:
         """
         Analisa a viabilidade de uma nova funcionalidade para um projeto.
         """
-        console.print(f"🕵️  [Feature Scout] Analisando viabilidade da funcionalidade para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"🕵️  [Feature Scout] Analisando viabilidade da funcionalidade para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um Gerente de Produto (Product Manager) experiente.
@@ -31,7 +36,9 @@ class FeatureViabilityScout:
             3.  **Parecer de Viabilidade:** Dê seu parecer (ex: "Alta Viabilidade", "Padrão de Mercado", "Aposta Arriscada") e justifique em uma frase.
         """
 
-        with console.status("[bold yellow]Aguardando IA analisar a funcionalidade...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA analisar a funcionalidade...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("🕵️  [Feature Scout] Análise concluída!")

@@ -1,24 +1,29 @@
 # agents/doc_checklist_builder.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class DocChecklistBuilder:
     """
     Usa IA para gerar um checklist de documentos necessários para um projeto.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Doc Checklist Builder] Inicializado.")
 
     def generate_checklist(self, project: models.Project) -> str:
         """
         Gera um checklist de documentos com base no tipo e país do projeto.
         """
-        console.print(f"📋 [Doc Checklist Builder] Gerando checklist para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"📋 [Doc Checklist Builder] Gerando checklist para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um consultor de projetos experiente.
@@ -32,7 +37,9 @@ class DocChecklistBuilder:
             4.  **Documentos de Encerramento:** (ex: Termo de Aceite, Lições Aprendidas)
         """
 
-        with console.status("[bold yellow]Aguardando IA gerar o checklist de documentos...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA gerar o checklist de documentos...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("📋 [Doc Checklist Builder] Checklist gerado com sucesso!")

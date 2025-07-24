@@ -1,24 +1,29 @@
 # agents/org_designer.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class OrgDesigner:
     """
     Usa IA para desenhar uma estrutura organizacional inicial para um projeto.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Org Designer] Inicializado.")
 
     def design_team_structure(self, project: models.Project) -> str:
         """
         Gera uma sugestão de estrutura de equipe para o projeto.
         """
-        console.print(f"👥 [Org Designer] Desenhando estrutura de equipe para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"👥 [Org Designer] Desenhando estrutura de equipe para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um consultor de RH e desenvolvimento organizacional.
@@ -32,7 +37,9 @@ class OrgDesigner:
             4.  Para cada papel, descreva suas 2 ou 3 principais responsabilidades.
         """
 
-        with console.status("[bold yellow]Aguardando IA desenhar a equipe...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA desenhar a equipe...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("👥 [Org Designer] Estrutura da equipe desenhada com sucesso!")

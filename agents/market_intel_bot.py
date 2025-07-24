@@ -1,27 +1,34 @@
 # agents/market_intel_bot.py
-import google.generativeai as genai
-from rich.console import Console
 import json
 
+import google.generativeai as genai
+from rich.console import Console
+
 console = Console()
+
 
 class MarketIntelBot:
     """
     Usa a API do Google Gemini para realizar análises de mercado.
     """
+
     def __init__(self, api_key: str):
         if not api_key or "SUA_CHAVE" in api_key:
             raise ValueError("A chave de API do Google Gemini é obrigatória.")
         genai.configure(api_key=api_key)
         # AQUI ESTÁ A CORREÇÃO: Usando um modelo mais recente.
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        console.print("✅ [Market Intel Bot] Conexão com a API do Google Gemini estabelecida.")
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        console.print(
+            "✅ [Market Intel Bot] Conexão com a API do Google Gemini estabelecida."
+        )
 
     def analyze_market_potential(self, project_name: str, project_type: str) -> dict:
         """
         Gera uma análise de potencial de mercado (TAM, SAM, SOM) para um projeto.
         """
-        console.print(f"🤖 [Market Intel Bot] Analisando potencial de mercado para: [bold green]{project_name}[/bold green]...")
+        console.print(
+            f"🤖 [Market Intel Bot] Analisando potencial de mercado para: [bold green]{project_name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um analista de negócios sênior.
@@ -42,11 +49,16 @@ class MarketIntelBot:
         """
 
         try:
-            with console.status("[bold yellow]Aguardando resposta da IA...[/bold yellow]", spinner="dots"):
+            with console.status(
+                "[bold yellow]Aguardando resposta da IA...[/bold yellow]",
+                spinner="dots",
+            ):
                 response = self.model.generate_content(prompt)
-            
-            cleaned_response = response.text.strip().replace("```json", "").replace("```", "")
-            
+
+            cleaned_response = (
+                response.text.strip().replace("```json", "").replace("```", "")
+            )
+
             analysis = json.loads(cleaned_response)
             console.print("🤖 [Market Intel Bot] Análise recebida com sucesso!")
             return analysis

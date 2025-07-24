@@ -1,24 +1,29 @@
 # agents/sensitivity_scenario_engine.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class SensitivityScenarioEngine:
     """
     Usa IA para criar análises de cenário (otimista, pessimista) para um modelo financeiro.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Sensitivity Scenario Engine] Inicializado.")
 
     def analyze_scenarios(self, project: models.Project) -> str:
         """
         Gera uma análise de sensibilidade financeira.
         """
-        console.print(f"📉📈 [Sensitivity Engine] Analisando cenários para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"📉📈 [Sensitivity Engine] Analisando cenários para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um Analista de Risco Financeiro.
@@ -33,7 +38,9 @@ class SensitivityScenarioEngine:
             Responda em formato Markdown, com um título para cada cenário.
         """
 
-        with console.status("[bold yellow]Aguardando IA analisar os cenários...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA analisar os cenários...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("📉📈 [Sensitivity Engine] Análise de cenários concluída!")

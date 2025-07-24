@@ -1,25 +1,31 @@
 # agents/risk_sentinel.py
+import json
+
 import google.generativeai as genai
 from rich.console import Console
-import json
+
 from src import models
 
 console = Console()
+
 
 class RiskSentinel:
     """
     Usa IA para identificar e pontuar os principais riscos de um projeto.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Risk Sentinel] Inicializado.")
 
     def analyze_risks(self, project: models.Project) -> list[dict]:
         """
         Gera uma lista de riscos potenciais para o projeto.
         """
-        console.print(f"🔎 [Risk Sentinel] Identificando riscos para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"🔎 [Risk Sentinel] Identificando riscos para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um Gerente de Riscos (Risk Manager) sênior.
@@ -46,10 +52,14 @@ class RiskSentinel:
         """
 
         try:
-            with console.status("[bold yellow]Aguardando IA identificar os riscos...[/bold yellow]"):
+            with console.status(
+                "[bold yellow]Aguardando IA identificar os riscos...[/bold yellow]"
+            ):
                 response = self.model.generate_content(prompt)
 
-            cleaned_response = response.text.strip().replace("```json", "").replace("```", "")
+            cleaned_response = (
+                response.text.strip().replace("```json", "").replace("```", "")
+            )
             risk_analysis = json.loads(cleaned_response)
 
             console.print("🔎 [Risk Sentinel] Análise de riscos concluída!")

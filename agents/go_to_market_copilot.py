@@ -1,24 +1,29 @@
 # agents/go_to_market_copilot.py
 import google.generativeai as genai
 from rich.console import Console
+
 from src import models
 
 console = Console()
+
 
 class GoToMarketCopilot:
     """
     Usa IA para ajudar a definir a estratégia de Go-to-Market de um projeto.
     """
+
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
         console.print("✅ [Go-to-Market Copilot] Inicializado.")
 
     def generate_strategy(self, project: models.Project) -> str:
         """
         Gera um esboço da estratégia de Go-to-Market.
         """
-        console.print(f"📈 [Go-to-Market Copilot] Delineando estratégia para: [bold green]{project.name}[/bold green]...")
+        console.print(
+            f"📈 [Go-to-Market Copilot] Delineando estratégia para: [bold green]{project.name}[/bold green]..."
+        )
 
         prompt = f"""
             Aja como um Diretor de Estratégia (CSO).
@@ -32,7 +37,9 @@ class GoToMarketCopilot:
             4.  **Mensagem Principal (Key Messaging):** Elabore uma frase que resuma o principal valor do produto para o cliente.
         """
 
-        with console.status("[bold yellow]Aguardando IA delinear a estratégia...[/bold yellow]"):
+        with console.status(
+            "[bold yellow]Aguardando IA delinear a estratégia...[/bold yellow]"
+        ):
             response = self.model.generate_content(prompt)
 
         console.print("📈 [Go-to-Market Copilot] Esboço da estratégia concluído!")
