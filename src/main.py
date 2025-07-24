@@ -1,4 +1,7 @@
+# src/main.py
+
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Dict
@@ -12,7 +15,6 @@ from rich.table import Table
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from agents.agent_router import AgentRouter
 from agents.notion_writer import NotionWriter
 from agents.schedule_copilot import ScheduleCopilot
 from agents.decision_supporter import DecisionSupporter
@@ -31,18 +33,17 @@ app = typer.Typer(help="🚀 PMO 360° – CLI")
 # ---------------------------------------------------------------------
 # Helpers para configuração e DB
 # ---------------------------------------------------------------------
-def load_env_vars(project_root: Path) -> None:
-    env_file = project_root / ".env"
-    if env_file.exists():
-        load_dotenv(env_file)
-    else:
-        console.print("[yellow]Aviso: .env não encontrado na raiz do projeto.[/yellow]")
-
-
 def load_config(project_root: Path) -> Dict[str, Any]:
+    """
+    Lê config/config.yaml e sobrescreve chaves sensíveis via .env.
+    """
     cfg_path = project_root / "config" / "config.yaml"
-    with open(cfg_path, "r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
+    try:
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+    except FileNotFoundError:
+        console.print("[bold red]Erro:[/] 'config.yaml' não encontrado.")
+        raise typer.Exit(1)
 
     # Override por ENV
     cfg["openai_key"]   = os.getenv("OPENAI_API_KEY", cfg.get("openai_key"))
@@ -60,19 +61,10 @@ def load_config(project_root: Path) -> Dict[str, Any]:
     return cfg
 
 
-def load_model_mapping(cfg: Dict[str, Any], project_root: Path) -> Dict[str, str]:
-    mapping_path = project_root / cfg["model_mapping_file"]
-    with open(mapping_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)["model_mapping"]
-
-
-def load_rules(cfg: Dict[str, Any], project_root: Path) -> Dict[str, Any]:
-    rules_path = project_root / cfg["rules_file"]
-    with open(rules_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
 def get_db_session(db_url: str):
+    """
+    Retorna uma sessão SQLAlchemy para o DB.
+    """
     engine = create_engine(db_url, future=True)
     Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     return Session()
@@ -81,7 +73,7 @@ def get_db_session(db_url: str):
 # ---------------------------------------------------------------------
 # Comando principal: NEW_PROJECT_CREATED (fluxo manual)
 # ---------------------------------------------------------------------
-@app.command(help="✨ Cria um novo projeto e seu cronograma de tarefas no DB e Notion.")
+@app.command(name="new-project", help="✨ Cria um novo projeto e seu cronograma de tarefas no DB e Notion.")
 def new_project(
     name: str = typer.Argument(..., help="O nome completo do novo projeto."),
     project_type: str = typer.Option("default", help="O tipo de projeto."),
@@ -103,6 +95,7 @@ def new_project(
         project_data = {"slug": slug, "name": name, "type": project_type, "country": country}
         notion_page_id = writer.create_project_page(project_data)
 
+        # Salva no banco
         db_project = models.Project(
             name=name,
             slug=slug,
@@ -114,6 +107,7 @@ def new_project(
         db_session.add(db_project)
         db_session.flush()
 
+        # Gera e salva tarefas
         tasks = scheduler.generate_schedule(project_type)
         for task_item in tasks:
             writer.create_task_page(task_item, project_relation_id=notion_page_id)
@@ -146,7 +140,8 @@ def support_decision(
     project_slug: str = typer.Argument(..., help="Slug do projeto."),
     decision: str    = typer.Argument(..., help="Decisão a ser analisada."),
 ) -> None:
-    cfg = load_config(Path(__file__).resolve().parents[1])
+    project_root = Path(__file__).resolve().parents[1]
+    cfg = load_config(project_root)
     db_session = get_db_session(cfg["database_url"])
     project = db_session.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
@@ -169,7 +164,8 @@ def support_decision(
 # ---------------------------------------------------------------------
 @app.command(help="🗺️  Mapeia stakeholders de um projeto.")
 def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do projeto")) -> None:
-    cfg = load_config(Path(__file__).resolve().parents[1])
+    project_root = Path(__file__).resolve().parents[1]
+    cfg = load_config(project_root)
     db_session = get_db_session(cfg["database_url"])
     project = db_session.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
@@ -197,7 +193,8 @@ def map_stakeholders(project_slug: str = typer.Argument(..., help="Slug do proje
 # ---------------------------------------------------------------------
 @app.command(help="🎨 Gera kit de marca para um projeto.")
 def generate_brand(project_slug: str = typer.Argument(..., help="Slug do projeto")) -> None:
-    cfg = load_config(Path(__file__).resolve().parents[1])
+    project_root = Path(__file__).resolve().parents[1]
+    cfg = load_config(project_root)
     db_session = get_db_session(cfg["database_url"])
     project = db_session.query(models.Project).filter_by(slug=project_slug).first()
     if not project:
@@ -236,15 +233,15 @@ def dashboard() -> None:
 # ---------------------------------------------------------------------
 # Comando: inicializa banco de dados
 # ---------------------------------------------------------------------
-@app.command(help="⚙️  Inicializa banco de dados (SQLite).")
+@app.command(help="⚙️ Inicializa banco de dados (SQLite).")
 def init_db() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    cfg = load_config(project_root)
     console.print("⚙️ Inicializando banco de dados...")
-    cfg = load_config(Path(__file__).resolve().parents[1])
     engine = create_engine(cfg["database_url"])
     models.create_db_and_tables(engine)
     console.print("✅ Banco inicializado com sucesso!")
 
 
-# Entry-point
 if __name__ == "__main__":
     app()
