@@ -1,9 +1,8 @@
 # utils/llm_router.py
-import os
 import openai
 import google.generativeai as genai
 
-# Import de provedores opcionais com fallback silencioso
+# Imports opcionais com fallback silencioso se não estiverem instalados
 try:
     from anthropic import Client as AnthropicClient
 except ImportError:
@@ -18,6 +17,7 @@ try:
     import cohere
 except ImportError:
     cohere = None
+
 
 class LLMRouter:
     """
@@ -79,7 +79,5 @@ class LLMRouter:
                     out = client.generate(model=model, prompt=prompt)
                     return out.generations[0].text
             except Exception:
-                # se falhar, continua para o próximo
                 continue
         raise RuntimeError("Nenhum provedor retornou resposta.")
-
