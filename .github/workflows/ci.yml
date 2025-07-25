@@ -27,20 +27,16 @@ jobs:
           pip install ruff mypy black isort pytest-cov
 
       - name: Check de isort  
-        run: |
-          isort --check-only .
+        run: isort --check-only .
 
       - name: Check de black  
-        run: |
-          black --check .
+        run: black --check .
 
       - name: Lint com ruff  
-        run: |
-          ruff check .
+        run: ruff check .
 
       - name: Type-check com mypy  
-        run: |
-          mypy src
+        run: mypy src
 
       - name: Rodar testes com cobertura  
         run: |
