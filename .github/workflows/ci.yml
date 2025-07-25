@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    name: 🛠️ Lint, type-check e testes
+    name: 🛠️ Check, Testes & Cobertura
     runs-on: ubuntu-latest
 
     steps:
@@ -24,28 +24,33 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff mypy
+          pip install ruff mypy black isort pytest-cov
 
-      - name: Instalar ferramentas de formatação
-        run: |
-          pip install black isort
+      - name: Check de isort  
+        run: isort --check-only .
 
-      - name: Check de isort
-        run: |
-          isort --check-only .
-
-      - name: Check de black
-        run: |
-          black --check .
+      - name: Check de black  
+        run: black --check .
 
       - name: Lint com ruff  
-        run: |
-          ruff check .
+        run: ruff check .
 
       - name: Type-check com mypy  
-        run: |
-          mypy src
+        run: mypy src
 
-      - name: Executar testes  
+      - name: Rodar testes com cobertura  
         run: |
-          pytest --maxfail=1 --disable-warnings -q
+          pytest --maxfail=1 --disable-warnings -q \
+            --cov=src \
+            --cov-report=xml:coverage.xml \
+            --cov-report=html
+
+      - name: Upload do relatório de cobertura (XML e HTML)  
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov/
+
+  # (aqui podemos adicionar em breve um job de build/deploy)
