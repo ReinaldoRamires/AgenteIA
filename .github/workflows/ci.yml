@@ -34,8 +34,7 @@ jobs:
 
       - name: Lint com Black
         run: |
-          # Black apenas em src e agents, sem ler pyproject.toml
-          black --check src agents
+          black --check --config /dev/null src agents
 
       - name: Lint com ruff
         run: ruff check .
