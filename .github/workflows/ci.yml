@@ -27,16 +27,20 @@ jobs:
           pip install ruff mypy black isort pytest-cov
 
       - name: Check de isort  
-        run: isort --check-only .
+        run: |
+          isort --check-only .
 
       - name: Check de black  
-        run: black --check .
+        run: |
+          black --check .
 
       - name: Lint com ruff  
-        run: ruff check .
+        run: |
+          ruff check .
 
       - name: Type-check com mypy  
-        run: mypy src
+        run: |
+          mypy src
 
       - name: Rodar testes com cobertura  
         run: |
@@ -46,11 +50,9 @@ jobs:
             --cov-report=html
 
       - name: Upload do relatório de cobertura (XML e HTML)  
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
             coverage.xml
             htmlcov/
-
-  # (aqui podemos adicionar em breve um job de build/deploy)
