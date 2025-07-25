@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI Pipeline
 
 on:
@@ -12,40 +13,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout  
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Python  
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
-      - name: Instalar dependências  
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install ruff mypy black isort pytest-cov
 
-      - name: Check de isort  
+      - name: Check de isort
         run: isort --check-only .
 
-      - name: Check de black  
+      - name: Check de black
         run: black --check .
 
-      - name: Lint com ruff  
+      - name: Lint com ruff
         run: ruff check .
 
-      - name: Type-check com mypy  
+      - name: Type-check com mypy
         run: mypy src
 
-      - name: Rodar testes com cobertura  
+      - name: Rodar testes com cobertura
         run: |
           pytest --maxfail=1 --disable-warnings -q \
             --cov=src \
             --cov-report=xml:coverage.xml \
             --cov-report=html
 
-      - name: Upload do relatório de cobertura (XML e HTML)  
+      - name: Upload do relatório de cobertura (XML e HTML)
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
