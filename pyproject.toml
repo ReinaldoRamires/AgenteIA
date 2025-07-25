@@ -3,4 +3,4 @@ profile = "black"
 line_length = 88
 src_paths = ["src"]
 known_first_party = ["agents", "src"]
-skip = ["src/main.py"]
+skip = ["src/main.py"]       # <-- isort nunca mais checa main.py
