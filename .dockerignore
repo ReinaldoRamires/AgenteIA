@@ -1,0 +1,19 @@
+# Ignora caches e artefatos não necessários no contexto de build
+__pycache__/
+*.pyc
+
+# Ambientes virtuais e credenciais
+.venv/
+.env
+
+# Git e workflows
+.git/
+.github/
+
+# Testes e relatórios
+tests/
+outputs/
+coverage.xml
+
+# Banco de dados local
+*.sqlite

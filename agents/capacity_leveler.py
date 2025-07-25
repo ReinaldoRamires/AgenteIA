@@ -1,5 +1,7 @@
 from typing import Any, Dict
+
 from .base_agent import BaseAgent
+
 
 class CapacityLeveler(BaseAgent):
     def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):

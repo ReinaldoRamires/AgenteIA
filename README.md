@@ -1,6 +1,19 @@
 Markdown
 
 # 🚀 Productivity Engine - PMO Digital 360°
+<!-- Status do workflow CI -->
+![CI Status](https://github.com/ReinaldoRamires/AgenteIA/actions/workflows/ci.yml/badge.svg)
+
+<!-- Build & Publish Docker -->
+![Docker Publish](https://github.com/ReinaldoRamires/AgenteIA/actions/workflows/build-and-publish.yml/badge.svg)
+
+<!-- Dependabot -->
+![Dependency Status](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen)
+
+<!-- Cobertura de Testes (Codecov) -->
+<!-- Se usar Codecov, após integrar: -->
+<!-- ![Codecov](https://codecov.io/gh/ReinaldoRamires/AgenteIA/branch/main/graph/badge.svg) -->
+
 
 Este projeto é um hub de automação local, orquestrado por linha de comando (CLI) e visualizado através de um dashboard web, para gerenciar o ciclo de vida de projetos complexos de forma automatizada.
 

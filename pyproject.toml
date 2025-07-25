@@ -1,6 +1,4 @@
-[tool.isort]
-profile = "black"
-line_length = 88
-src_paths = ["src"]
-known_first_party = ["agents", "src"]
-skip = ["src/main.py"]       # <-- isort nunca mais checa main.py
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+exclude = '''

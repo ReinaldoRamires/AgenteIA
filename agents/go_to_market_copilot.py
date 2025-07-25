@@ -1,6 +1,8 @@
 # agents/go_to_market_copilot.py
 from typing import Any, Dict
+
 from .base_agent import BaseAgent
+
 
 class GoToMarketCopilot(BaseAgent):
     def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):

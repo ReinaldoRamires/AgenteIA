@@ -1,10 +1,12 @@
 # agents/fin_modeler.py
 from typing import Any, Dict
+
 from rich.console import Console
 
 from .base_agent import BaseAgent
 
 console = Console()
+
 
 class FinModeler(BaseAgent):
     """
