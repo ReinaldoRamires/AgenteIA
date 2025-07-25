@@ -29,12 +29,12 @@ jobs:
 
       - name: Lint imports (isort)
         run: |
-          # só verifica first-party: src e agents
+          # Só verifica first-party: src e agents, ignora venv
           isort --check-only src agents --skip .venv
 
       - name: Lint com Black
         run: |
-          # formata/verifica apenas src e agents
+          # Black apenas em src e agents, sem ler pyproject.toml
           black --check src agents
 
       - name: Lint com ruff
