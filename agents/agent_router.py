@@ -30,4 +30,6 @@ class AgentRouter:
                 agent = agent_cls()
                 agent.execute(data, dry_run=self.dry_run)
         else:
-            console.print(f"[yellow]Nenhum workflow para evento '{event_type}'[/yellow]")
+            console.print(
+                f"[yellow]Nenhum workflow para evento '{event_type}'[/yellow]"
+            )

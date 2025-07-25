@@ -1,8 +1,11 @@
 from typing import Any, Dict
+
 from rich.console import Console
+
 from .base_agent import BaseAgent
 
 console = Console()
+
 
 class StatusCollector(BaseAgent):
     def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):

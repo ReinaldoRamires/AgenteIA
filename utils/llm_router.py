@@ -1,6 +1,6 @@
 # utils/llm_router.py
-import openai
 import google.generativeai as genai
+import openai
 
 # Imports opcionais com fallback silencioso se não estiverem instalados
 try:

@@ -1,6 +1,8 @@
 # agents/compliance_guardian.py
 from typing import Any, Dict
+
 from .base_agent import BaseAgent
+
 
 class ComplianceGuardian(BaseAgent):
     def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):

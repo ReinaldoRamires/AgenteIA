@@ -1,6 +1,8 @@
 # agents/org_designer.py
 from typing import Any, Dict
+
 from .base_agent import BaseAgent
+
 
 class OrgDesigner(BaseAgent):
     def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):

@@ -1,6 +1,7 @@
 # agents/brand_kit_bot.py
 
 import json
+
 from agents.base_agent import BaseAgent
 
 
@@ -33,7 +34,11 @@ class BrandKitBot(BaseAgent):
 
     def run(self, project_data: dict) -> dict:
         prompt = self.build_prompt(project_data)
-        text = self._call_openai(prompt) if self.model.startswith("gpt") else self._call_gemini(prompt)
+        text = (
+            self._call_openai(prompt)
+            if self.model.startswith("gpt")
+            else self._call_gemini(prompt)
+        )
 
         try:
             data = json.loads(text)
