@@ -1,5 +1,3 @@
-# src/main.py
-
 import os
 import re
 import subprocess
@@ -79,18 +77,18 @@ def new_project(
     name: str,
     project_type: str = typer.Option("default", help="Tipo de projeto"),
     country: str = typer.Option("Brasil", help="País"),
+    dry_run: bool = typer.Option(False, help="Não chamar APIs (simulação)"),
 ) -> None:
     console.print(f"✨ Iniciando criação do projeto: [bold green]{name}[/bold green]")
     config = get_config()
     db_session = get_db_session(config.get("database_url"))
-
     try:
         writer = NotionWriter(
             token=config["api_keys"]["notion"],
             projects_db_id=config["notion_db"]["projects_db_id"],
             tasks_db_id=config["notion_db"]["tasks_db_id"],
         )
-        scheduler = ScheduleCopilot()
+        scheduler = ScheduleCopilot(config=config, model_mapping=config.get("model_mapping", {}))
         slug = re.sub(r"[^\w-]", "", name.lower().replace(" ", "-"))
         project_data = {
             "slug": slug,
@@ -134,7 +132,99 @@ def new_project(
         db_session.close()
 
 
-# ... resto dos comandos unchanged ...
+@app.command(help="🤔 Analisa prós, contras e riscos de uma decisão estratégica.")
+def support_decision(
+    project_slug: str = typer.Argument(..., help="O 'slug' do projeto."),
+    decision: str = typer.Argument(..., help="A decisão a ser analisada."),
+):
+    config = get_config()
+    db_session = get_db_session(config.get("database_url"))
+    try:
+        project = db_session.query(models.Project).filter_by(slug=project_slug).first()
+        if not project:
+            console.print(f"[bold red]Erro:[/bold_red] Projeto '{project_slug}' não encontrado.")
+            return
+        supporter = DecisionSupporter(api_key=config["api_keys"]["google_gemini"])
+        analysis = supporter.analyze_trade_offs(project, decision)
+        console.print(f"\n--- Análise da Decisão: '{decision}' ---\n{analysis}\n" + "-" * 50)
+    except Exception as e:
+        console.print(f"[bold red]Falha na análise de decisão: {e}[/bold red]")
+    finally:
+        db_session.close()
 
+
+@app.command(help="🗺️  Mapeia os stakeholders de um projeto.")
+def map_stakeholders(project_slug: str = typer.Argument(..., help="O 'slug' do projeto.")):
+    config = get_config()
+    db_session = get_db_session(config.get("database_url"))
+    try:
+        project = db_session.query(models.Project).filter_by(slug=project_slug).first()
+        if not project:
+            console.print(f"[bold red]Erro:[/bold_red] Projeto '{project_slug}' não encontrado.")
+            return
+        mapper = StakeholderGraphBot(api_key=config["api_keys"]["google_gemini"])
+        stakeholders = mapper.map_stakeholders(project)
+        table = Table(
+            title=f"Stakeholders: {project.name}",
+            show_header=True,
+            header_style="bold green",
+        )
+        table.add_column("Stakeholder", style="dim", width=25)
+        table.add_column("Influência")
+        table.add_column("Interesse")
+        table.add_column("Estratégia", width=50)
+        for sh in stakeholders:
+            table.add_row(sh["stakeholder"], sh["influence"], sh["interest"], sh["engagement"])
+        console.print(table)
+    finally:
+        db_session.close()
+
+
+@app.command(help="🎨 Gera um kit de identidade de marca para um projeto.")
+def generate_brand(project_slug: str = typer.Argument(..., help="O 'slug' do projeto.")):
+    config = get_config()
+    db_session = get_db_session(config.get("database_url"))
+    try:
+        project = db_session.query(models.Project).filter_by(slug=project_slug).first()
+        if not project:
+            console.print(f"[bold red]Erro:[/bold_red] Projeto '{project_slug}' não encontrado.")
+            return
+        brander = BrandKitBot(api_key=config["api_keys"]["google_gemini"])
+        kit = brander.generate_kit(project)
+        slogan = kit.get("slogan", "N/A")
+        mission = kit.get("mission_statement", "N/A")
+        palette = kit.get("color_palette", [])
+        colors_str = "\n".join(f"[{c.split()[0]}]███[/] {c}" for c in palette)
+        panel = Panel(
+            f"[bold]Slogan:[/bold] {slogan}\n\n"
+            f"[bold]Missão:[/bold] {mission}\n\n"
+            f"[bold]Paleta de Cores:[/bold]\n{colors_str}",
+            title=f"Kit de Marca: {project.name}",
+            border_style="yellow",
+        )
+        console.print(panel)
+    finally:
+        db_session.close()
+
+
+@app.command(help="📊 Inicia o dashboard visual de projetos.")
+def dashboard():
+    console.print("📊 Lançando o dashboard de projetos...")
+    subprocess.run(["streamlit", "run", "src/dashboard.py"], check=False)
+
+
+@app.command(help="⚙️  Cria o arquivo de banco de dados e as tabelas.")
+def init_db():
+    console.print("⚙️  Inicializando o banco de dados...")
+    config = get_config()
+    db_url = config.get("database_url")
+    engine = create_engine(db_url)
+    models.create_db_and_tables(engine)
+    console.print("✅ Banco de dados inicializado com sucesso!")
+
+
+# ---------------------------------------------------------------------
+# Entry-point
+# ---------------------------------------------------------------------
 if __name__ == "__main__":
     app()
