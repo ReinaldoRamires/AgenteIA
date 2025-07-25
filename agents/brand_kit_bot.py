@@ -34,9 +34,10 @@ class BrandKitBot(BaseAgent):
 
     def run(self, project_data: dict) -> dict:
         prompt = self.build_prompt(project_data)
+        # Use router to call either OpenAI or Gemini based on configured model
         text = (
             self._call_openai(prompt)
-            if self.model.startswith("gpt")
+            if self.model and self.model.startswith("gpt")
             else self._call_gemini(prompt)
         )
 
@@ -50,3 +51,23 @@ class BrandKitBot(BaseAgent):
             "model": self.model,
             "result": data,
         }
+
+    def _call_openai(self, prompt: str) -> str:
+        """
+        Encapsula chamada ao modelo GPT via LLMRouter.
+        """
+        return self.router.generate(self.model, prompt)
+
+    def _call_gemini(self, prompt: str) -> str:
+        """
+        Encapsula chamada ao modelo Gemini via LLMRouter.
+        """
+        return self.router.generate(self.model, prompt)
+
+    def generate_kit(self, project_data: dict, dry_run: bool = False) -> dict:
+        """
+        Interface de conveniência para o CLI.
+        Chama run() e retorna apenas o resultado (kit) para o projeto.
+        """
+        result = self.run(project_data) if not dry_run else {"result": {}}
+        return result.get("result", result)
