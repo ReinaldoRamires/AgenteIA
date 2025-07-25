@@ -8,7 +8,8 @@ class BaseAgent(ABC):
         self.name = name
         self.config = config
         self.model = model_mapping.get(name)
-        self.router = LLMRouter(config)
+        # Pass both config and model_mapping to LLMRouter so it can route based on model mapping
+        self.router = LLMRouter(config, model_mapping)
 
     @abstractmethod
     def build_prompt(self, project_data: dict) -> str:
@@ -26,9 +27,10 @@ class BaseAgent(ABC):
 
         print(f"🤖  Enviando prompt ao modelo '{self.model}'...")
         try:
-            response = self.router.generate(
-                prompt, model=self.model, agent_name=self.name
-            )
+            # Generate using the selected model; LLMRouter expects (model, prompt)
+            response = self.router.generate(self.model, prompt)
             print(response)
+            return response
         except Exception as e:
             print(f"❌ Erro em '{self.name}': {e}")
+            raise
