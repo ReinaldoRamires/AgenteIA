@@ -5,13 +5,13 @@ import re
 import subprocess
 
 from dotenv import load_dotenv
-import typer
-import yaml
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import typer
+import yaml
 
 from agents.brand_kit_bot import BrandKitBot
 from agents.decision_supporter import DecisionSupporter
