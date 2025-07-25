@@ -1,5 +1,5 @@
 # src/scheduler.py
-
+# type: ignore
 import yaml
 from apscheduler.schedulers.blocking import BlockingScheduler
 from rich.console import Console

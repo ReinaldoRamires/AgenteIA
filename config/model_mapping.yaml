@@ -1,0 +1,25 @@
+model_mapping:
+  schedule_copilot: gpt-3.5-turbo
+  notion_writer: gpt-3.5-turbo
+  market_intel_bot: gpt-4o-mini
+  compliance_guardian: gpt-4o-mini
+  risk_sentinel: gpt-3.5-turbo
+  go_to_market_copilot: gpt-4o-mini
+  org_designer: gpt-3.5-turbo
+  fin_modeler: gpt-4o-mini
+  executive_narrator: gpt-4o-mini
+  capacity_forecaster: gemini-1.5-flash-latest
+  capacity_leveler: gemini-1.5-flash-latest
+  comm_plan_builder: gemini-1.5-flash-latest
+  contract_fabric: gemini-1.5-flash-latest
+  decision_supporter: gemini-1.5-flash-latest
+  doc_checklist_builder: gemini-1.5-flash-latest
+  feature_viability_scout: gemini-1.5-flash-latest
+  it_bootstrapper: gemini-1.5-flash-latest
+  process_mapper: gemini-1.5-flash-latest
+  sensitivity_scenario_engine: gemini-1.5-flash-latest
+  stakeholder_graph_bot: gemini-1.5-flash-latest
+  status_collector: gpt-3.5-turbo
+  tam_sam_som_estimator: gpt-4o-mini
+  backup_job: gpt-3.5-turbo
+  accounting_helper: gpt-3.5-turbo

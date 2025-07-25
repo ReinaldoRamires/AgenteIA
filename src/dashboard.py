@@ -1,4 +1,5 @@
 # src/dashboard.py
+# type: ignore
 
 import json
 

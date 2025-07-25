@@ -1,55 +1,33 @@
 # agents/fin_modeler.py
-import google.generativeai as genai
+from typing import Any, Dict
 from rich.console import Console
 
-from src import models
+from .base_agent import BaseAgent
 
 console = Console()
 
-
-class FinModeler:
+class FinModeler(BaseAgent):
     """
-    Usa IA para criar modelos e análises de viabilidade financeira.
+    Gera/analisa modelos financeiros (receita, custo, payback, etc).
+    Usa o default run() do BaseAgent.
     """
 
-    def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
-        console.print("✅ [FinModeler] Inicializado.")
+    def __init__(self, config: Dict[str, Any], model_mapping: Dict[str, str]):
+        super().__init__("fin_modeler", config, model_mapping)
 
-    def analyze_viability(self, project: models.Project, market_analysis: dict) -> str:
-        """
-        Gera uma análise de viabilidade financeira simplificada.
-        """
-        console.print(
-            f"💰 [FinModeler] Analisando viabilidade financeira para: [bold green]{project.name}[/bold green]..."
-        )
+    def build_prompt(self, project_data: Dict[str, Any]) -> str:
+        name = project_data.get("name", "Projeto sem nome")
+        project_type = project_data.get("project_type", "desconhecido")
 
-        # Usamos a análise de mercado (SOM) que já temos para dar mais contexto à IA
-        som_context = market_analysis.get("som", {}).get("value", "não estimado")
+        return f"""
+Você é um analista financeiro experiente. 
+Preciso que construa um resumo de viabilidade financeira para o projeto "{name}" (tipo: {project_type}).
 
-        prompt = f"""
-            Aja como um Analista Financeiro (CFA).
-            Para um projeto chamado "{project.name}", do tipo "{project.project_type}", 
-            com um Mercado Obtível (SOM) estimado em "{som_context}", crie uma análise de viabilidade financeira simplificada em formato Markdown.
+1. Liste hipóteses principais (ex.: preço, CAC, churn).
+2. Faça projeções de receita/custo em 12 meses (curto prazo) e 36 meses (médio prazo).
+3. Estime indicadores: LTV, CAC Payback, Margem Bruta, Ponto de Equilíbrio.
+4. Apresente riscos financeiros e estratégias de mitigação.
+5. Formate em tópicos, bem objetivo.
 
-            Faça as seguintes suposições para um cenário base:
-            - Investimento Inicial (CAPEX): Estime um valor razoável para este tipo de projeto.
-            - Custo Operacional Anual (OPEX): Estime um valor razoável.
-            - Projeção de Receita Anual para 5 anos, começando de forma conservadora e crescendo em direção a uma pequena fatia do SOM.
-
-            Com base nessas suposições, calcule e apresente:
-            1.  **Resumo das Premissas:** Liste o CAPEX, OPEX e as receitas anuais projetadas.
-            2.  **Fluxo de Caixa Descontado (DCF) Simplificado:** Mostre o fluxo de caixa ano a ano e o Valor Presente Líquido (VPL/NPV), assumindo uma taxa de desconto de 15% a.a.
-            3.  **ROI (Retorno sobre o Investimento):** Calcule o ROI ao final de 5 anos.
-            4.  **Payback Simples:** Estime em que ano o investimento inicial é pago.
-            5.  **Conclusão do Analista:** Dê um parecer breve sobre a viabilidade do projeto com base nos números.
-        """
-
-        with console.status(
-            "[bold yellow]Aguardando IA calcular a viabilidade...[/bold yellow]"
-        ):
-            response = self.model.generate_content(prompt)
-
-        console.print("💰 [FinModeler] Análise de viabilidade concluída!")
-        return response.text
+Se precisar assumir valores, seja realista e transparente.
+"""

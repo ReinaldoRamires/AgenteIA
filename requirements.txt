@@ -1,6 +1,7 @@
 # Core & CLI
 typer[all]
 rich
+python-dotenv
 
 # Web UI
 streamlit
@@ -27,3 +28,4 @@ pytest-cov
 
 # Visualização de Dados
 plotly
+genai>=0.4.2

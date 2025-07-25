@@ -1,42 +1,41 @@
 # agents/backup_job.py
 import os
-import zipfile
-from datetime import datetime
+import shutil
+import datetime
 
+from typing import Any, Dict
 from rich.console import Console
 
 console = Console()
 
 
 class BackupJob:
-    """Realiza o backup de arquivos importantes do projeto."""
+    """
+    Realiza backup periódico dos dados em disco.
+    """
 
-    def __init__(self, db_path="projects.db", backup_dir="backups"):
-        self.db_path = db_path
-        self.backup_dir = backup_dir
-        os.makedirs(self.backup_dir, exist_ok=True)
-        console.print("✅ [Backup Job] Inicializado.")
+    def __init__(self, backup_path: str, retention_days: int):
+        self.backup_path = backup_path
+        self.retention_days = retention_days
 
-    def run_backup(self):
-        """Cria um arquivo .zip com o banco de dados."""
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        backup_filename = os.path.join(self.backup_dir, f"backup_{timestamp}.zip")
+    def execute(self, data: Dict[str, Any], dry_run: bool = False):
+        now = datetime.datetime.utcnow()
+        backup_dir = os.path.join(self.backup_path, now.strftime("%Y%m%d_%H%M%S"))
+        if dry_run:
+            console.print(f"[DryRun] Criaria backup em {backup_dir}")
+        else:
+            shutil.copytree("data/", backup_dir)
+            console.print(f"Backup criado em {backup_dir}")
+            self._cleanup_old(now)
 
-        console.print(
-            f"🗄️  [Backup Job] Iniciando backup em [bold cyan]{backup_filename}[/bold cyan]..."
-        )
-
-        try:
-            if not os.path.exists(self.db_path):
-                console.print(
-                    f"   -> [bold yellow]Aviso:[/bold yellow] Arquivo do banco de dados '{self.db_path}' não encontrado. Backup pulado."
-                )
-                return
-
-            with zipfile.ZipFile(backup_filename, "w") as zipf:
-                zipf.write(self.db_path, os.path.basename(self.db_path))
-
-            console.print("   -> Backup concluído com sucesso!")
-
-        except Exception as e:
-            console.print(f"[bold red]ERRO ao criar backup:[/bold red] {e}")
+    def _cleanup_old(self, now: datetime.datetime):
+        cutoff = now - datetime.timedelta(days=self.retention_days)
+        for folder in os.listdir(self.backup_path):
+            full_path = os.path.join(self.backup_path, folder)
+            try:
+                folder_time = datetime.datetime.strptime(folder, "%Y%m%d_%H%M%S")
+            except ValueError:
+                continue
+            if folder_time < cutoff:
+                shutil.rmtree(full_path)
+                console.print(f"Removido backup antigo: {folder}")

@@ -1,64 +1,47 @@
 # agents/brand_kit_bot.py
+
 import json
-
-import google.generativeai as genai
-from rich.console import Console
-
-from src import models
-
-console = Console()
+from agents.base_agent import BaseAgent
 
 
-class BrandKitBot:
+class BrandKitBot(BaseAgent):
     """
-    Usa IA para gerar uma identidade de marca básica para um projeto.
+    Gera um kit de identidade de marca inicial (slogan, missão, paleta de cores, etc.).
+    Usa o modelo definido no model_mapping (GPT ou Gemini).
     """
 
-    def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
-        console.print("✅ [Brand Kit Bot] Inicializado.")
+    def __init__(self, config: dict, model_mapping: dict):
+        super().__init__("brand_kit_bot", config, model_mapping)
 
-    def generate_kit(self, project: models.Project) -> dict:
-        """
-        Gera um kit de marca com slogan, missão e paleta de cores.
-        """
-        console.print(
-            f"🎨 [Brand Kit Bot] Criando identidade de marca para: [bold green]{project.name}[/bold green]..."
+    def build_prompt(self, project_data: dict) -> str:
+        name = project_data.get("name", "Projeto Sem Nome")
+        project_type = project_data.get("project_type", "Padrão")
+        return (
+            "Você é um estrategista de marca. Gere um Brand Kit inicial para o projeto.\n"
+            f"Nome do projeto: {name}\n"
+            f"Tipo de projeto: {project_type}\n\n"
+            "Responda em JSON com o formato:\n"
+            "{\n"
+            '  "slogan": "...",\n'
+            '  "mission_statement": "...",\n'
+            '  "tone_of_voice": "...",\n'
+            '  "color_palette": ["#RRGGBB - descrição", "...", "..."],\n'
+            '  "typography": {"primary": "...", "secondary": "..."},\n'
+            '  "logo_ideas": ["...", "..."]\n'
+            "}\n"
         )
 
-        prompt = f"""
-            Aja como um Estrategista de Marca (Brand Strategist).
-            Para um novo projeto chamado "{project.name}", que é do tipo "{project.project_type}", 
-            crie uma identidade de marca inicial.
-
-            Forneça os seguintes elementos:
-            - "slogan": Um slogan curto e impactante.
-            - "mission_statement": Uma declaração de missão de uma frase.
-            - "color_palette": Uma lista de 4 códigos de cor hexadecimais (HEX) que representem a marca, junto com o nome da cor (ex: "#FFFFFF (Branco Gelo)").
-
-            Responda APENAS com um objeto JSON válido, sem nenhum texto adicional.
-            O formato deve ser:
-            {{
-              "slogan": "...",
-              "mission_statement": "...",
-              "color_palette": ["...", "...", "...", "..."]
-            }}
-        """
+    def run(self, project_data: dict) -> dict:
+        prompt = self.build_prompt(project_data)
+        text = self._call_openai(prompt) if self.model.startswith("gpt") else self._call_gemini(prompt)
 
         try:
-            with console.status(
-                "[bold yellow]Aguardando IA criar a marca...[/bold yellow]"
-            ):
-                response = self.model.generate_content(prompt)
+            data = json.loads(text)
+        except Exception:
+            data = {"raw_text": text}
 
-            cleaned_response = (
-                response.text.strip().replace("```json", "").replace("```", "")
-            )
-            brand_kit = json.loads(cleaned_response)
-
-            console.print("🎨 [Brand Kit Bot] Kit de marca gerado com sucesso!")
-            return brand_kit
-        except Exception as e:
-            console.print(f"[bold red]ERRO ao gerar o kit de marca:[/bold red] {e}")
-            return {}
+        return {
+            "agent": self.name,
+            "model": self.model,
+            "result": data,
+        }
