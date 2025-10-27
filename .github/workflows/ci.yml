@@ -47,7 +47,7 @@ jobs:
             --cov-report=html
 
       - name: Upload do relatório de cobertura (XML e HTML)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report
           path: |
